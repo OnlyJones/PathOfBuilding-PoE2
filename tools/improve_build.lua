@@ -15,11 +15,14 @@ for i = 1, #arg do
 	if arg[i] == "--seed" then args.seed = tonumber(arg[i + 1]) end
 	if arg[i] == "--budget" then args.budget = arg[i + 1] end
 	if arg[i] == "--slots" then args.slots = arg[i + 1] end
+	if arg[i] == "--keep-uniques" then args.keepUniques = true end
+	if arg[i] == "--replace-uniques" then args.keepUniques = false end
+	if arg[i] == "--focus" then args.focus = arg[i + 1] end
 end
 
 local input = arg[1]
 if not input then
-	print("Usage: luajit tools/improve_build.lua <seed.xml|share_code_url> [--output out.xml] [--points N] [--level N] [--gear-sets N] [--beam-width N] [--seed N] [--budget mid|high|low] [--slots weapon,body,gloves,...]")
+	print("Usage: luajit tools/improve_build.lua <seed.xml|share_code_url> [--output out.xml] [--points N] [--level N] [--gear-sets N] [--beam-width N] [--seed N] [--budget mid|high|low] [--slots weapon,body,gloves,...] [--keep-uniques | --replace-uniques] [--focus dps|balance|defence]")
 	os.exit(1)
 end
 
@@ -30,6 +33,8 @@ local gearSetCount = args.gearSets or 12
 local beamWidth = args.beamWidth or 1
 local seed = args.seed or os.time()
 local budget = args.budget or "mid"
+local keepUniques = args.keepUniques ~= false
+local focus = args.focus or "dps"
 math.randomseed(seed)
 
 local t_insert = table.insert
@@ -141,6 +146,19 @@ end
 -- Configure adaptive item pool from seed identity
 itemPool.configure({ mainSkill = mainSkillName, items = seedInfo.items, level = seedInfo.level, budget = budget })
 
+-- Slots that have unique items in the seed; we can preserve them by default.
+local seedUniqueSlots = {}
+for slotName, saved in pairs(seedInfo.items) do
+	if saved.rarity == "UNIQUE" then
+		seedUniqueSlots[slotName] = true
+	end
+end
+if keepUniques and next(seedUniqueSlots) then
+	local list = {}
+	for s in pairs(seedUniqueSlots) do t_insert(list, s) end
+	print(string.format("  Keeping seed uniques in slots: %s", table.concat(list, ", ")))
+end
+
 print("Loaded seed build: " .. sourceName)
 print(string.format("  Class: %s / %s", build.spec.curClassName or "?", build.spec.curAscendClassName or "?"))
 print(string.format("  Level: %d", seedInfo.level))
@@ -162,22 +180,37 @@ local objConfig = {
 	weights = {
 		TotalDPS = 1.0,
 		FullDPS = 0.5,
-		TotalEHP = 0.001,
-		Life = 0.5,
+		TotalEHP = 0.002,
+		Life = 0.8,
+		Evasion = 0.001,
 	},
 	gates = {
-		minLife = 1000,
+		minLife = 1500,
 		minUncappedResist = 0,
 		minDex = 0,
 		minInt = 0,
 		minStr = 0,
 	},
 	penalties = {
-		resistBelowCap = 5000,
+		resistBelowCap = 10000,
 		lifeBelowMin = 100,
 		attributeShortfall = 1000,
 	},
 }
+
+if focus == "balance" then
+	objConfig.weights.TotalDPS = 0.7
+	objConfig.weights.TotalEHP = 0.008
+	objConfig.weights.Life = 1.2
+	objConfig.weights.Evasion = 0.003
+	objConfig.gates.minLife = 2000
+elseif focus == "defence" then
+	objConfig.weights.TotalDPS = 0.3
+	objConfig.weights.TotalEHP = 0.015
+	objConfig.weights.Life = 2.0
+	objConfig.weights.Evasion = 0.005
+	objConfig.gates.minLife = 2500
+end
 
 local function evalBuild()
 	build.buildFlag = true
@@ -326,20 +359,38 @@ end
 local function improveGear(gearSet)
 	local generatedSlots = {}
 	for _, entry in ipairs(gearSet) do
-		generatedSlots[entry.slot] = true
-		build.itemsTab:CreateDisplayItemFromRaw(entry.raw)
-		if build.itemsTab.displayItem then
-			build.itemsTab:AddDisplayItem()
+		-- Skip generation for slots where the seed has a unique we want to keep.
+		if keepUniques and seedUniqueSlots[entry.slot] then
+			-- do not generate; will re-add original below
+		else
+			generatedSlots[entry.slot] = true
+			build.itemsTab:CreateDisplayItemFromRaw(entry.raw)
+			if build.itemsTab.displayItem then
+				build.itemsTab:AddDisplayItem()
+			end
 		end
 	end
 
-	-- Keep original items for slots we didn't target
+	-- Re-add seed uniques we are preserving.
 	for slotName, saved in pairs(seedInfo.items) do
-		local isTarget = not targetSlots or targetSlots[slotName]
-		if not generatedSlots[slotName] and isTarget and saved.raw then
+		if keepUniques and saved.rarity == "UNIQUE" and saved.raw then
 			build.itemsTab:CreateDisplayItemFromRaw(saved.raw)
 			if build.itemsTab.displayItem then
 				build.itemsTab:AddDisplayItem()
+			end
+		end
+	end
+
+	-- Keep original items for slots we didn't target or generate.
+	for slotName, saved in pairs(seedInfo.items) do
+		local isTarget = not targetSlots or targetSlots[slotName]
+		if not generatedSlots[slotName] and isTarget and saved.raw then
+			-- Avoid duplicating uniques we already re-added above.
+			if not (keepUniques and saved.rarity == "UNIQUE") then
+				build.itemsTab:CreateDisplayItemFromRaw(saved.raw)
+				if build.itemsTab.displayItem then
+					build.itemsTab:AddDisplayItem()
+				end
 			end
 		end
 	end

@@ -1,19 +1,33 @@
 -- Path of Building: PoE2 — Share Code Utilities
 --
--- Decodes PoB2 build share codes (base64 + zlib inflate).
+-- Decodes and encodes PoB2 build share codes (base64 + zlib).
 -- Also supports direct URL-to-XML fetching for known build sites.
 
 local M = {}
 
--- === zlib inflate via Python (most reliable cross-arch) ===
-local function pythonInflate(bin, windowBits)
+-- === zlib inflate/deflate via Python (most reliable cross-arch) ===
+local function pythonZlib(bin, mode, windowBits)
 	windowBits = windowBits or 15
 	local b64 = require("tools/lib/base64")
 	local encoded = b64.encode(bin)
 
 	local pyPath = os.tmpname() .. ".py"
 	local f = io.open(pyPath, "w")
-	f:write(string.format([[
+	if mode == "deflate" then
+		f:write(string.format([[
+import base64, zlib, sys
+try:
+    data = base64.b64decode(%q)
+    out = zlib.compress(data, level=9)
+    # Strip zlib 2-byte header and 4-byte adler32 trailer for raw deflate
+    out = out[2:-4]
+    sys.stdout.buffer.write(out)
+except Exception as e:
+    sys.stderr.write(str(e))
+    sys.exit(1)
+]], encoded))
+	else
+		f:write(string.format([[
 import base64, zlib, sys
 try:
     data = base64.b64decode(%q)
@@ -23,18 +37,19 @@ except Exception as e:
     sys.stderr.write(str(e))
     sys.exit(1)
 ]], encoded, windowBits))
+	end
 	f:close()
 
 	local pipe = io.popen('python "' .. pyPath .. '" 2>nul', "rb")
 	if not pipe then
 		os.remove(pyPath)
-		error("Failed to spawn Python for zlib inflate")
+		error("Failed to spawn Python for zlib")
 	end
 	local data = pipe:read("*a")
 	local ok, _, code = pipe:close()
 	os.remove(pyPath)
 	if not (ok or code == 0) or not data or #data == 0 then
-		error("Python zlib inflate failed (windowBits=" .. windowBits .. ")")
+		error("Python zlib " .. mode .. " failed (windowBits=" .. windowBits .. ")")
 	end
 	return data
 end
@@ -44,7 +59,7 @@ function M.decodeRawCode(code)
 	local normalized = code:gsub("^[%s?]+", ""):gsub("[%s?]+$", "")
 	local b64 = require("tools/lib/base64")
 	local bin = b64.decode(normalized)
-	return pythonInflate(bin, 15)
+	return pythonZlib(bin, "inflate", 15)
 end
 
 -- === Decode raw code with raw deflate (no zlib header) fallback ===
@@ -54,13 +69,25 @@ function M.decode(code)
 		ok, xml = pcall(function()
 			local b64 = require("tools/lib/base64")
 			local bin = b64.decode(code)
-			return pythonInflate(bin, -15)
+			return pythonZlib(bin, "inflate", -15)
 		end)
 	end
 	if not ok then
 		error("Failed to decode share code: " .. tostring(xml))
 	end
 	return xml
+end
+
+-- === Encode XML into a PoB share code (raw deflate + URL-safe base64) ===
+function M.encode(xml)
+	local rawDeflate = pythonZlib(xml, "deflate")
+	local b64 = require("tools/lib/base64")
+	return b64.encode(rawDeflate)
+end
+
+function M.encodeToURL(xml)
+	local code = M.encode(xml)
+	return "https://pobb.in/" .. code
 end
 
 -- === Known build-site definitions ===

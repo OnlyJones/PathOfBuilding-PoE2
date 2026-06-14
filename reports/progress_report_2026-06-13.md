@@ -1,9 +1,9 @@
-# PoE2 Lightning Arrow Build Optimizer — Progress Report
+# PoE2 Build Optimizer — Progress Report
 
 Date: 2026-06-13
 
 ## Goal
-Determine whether an AI agent can create Path of Exile 2 Lightning Arrow Deadeye builds comparable to current-season community builds, using Path of Building: PoE2 as the simulation oracle.
+Determine whether an AI agent can create Path of Exile 2 builds that beat current-season community builds, using Path of Building: PoE2 as the simulation oracle. The tooling is designed to be **archetype-agnostic**: it should optimize any player's build regardless of class, ascendancy, main skill, or weapon type.
 
 ## What was done
 
@@ -11,77 +11,73 @@ Determine whether an AI agent can create Path of Exile 2 Lightning Arrow Deadeye
 - Fixed `tools/lib/pob_env.lua` headless bootstrap:
   - Exposed `POB_PROJECT_ROOT` global.
   - Overrode `LoadModule` / `PLoadModule` so POB can load `src/Data/` modules after cwd is restored to the project root.
-  - Fixed wrapper to preserve multiple return values from `Modules/BuildDisplayStats` (was collapsing `extraSaveStats`/`minionDisplayStats` to `nil`, breaking save).
-- Fixed `tools/lib/share_code.lua` URL regexes so pobb.in (and other sites) are rewritten correctly when a full URL is passed.
+  - Fixed wrapper to preserve multiple return values from `Modules/BuildDisplayStats`.
+- Fixed `tools/lib/share_code.lua` URL regexes and added **share-code encoding** (`tools/export_share_code.lua`).
 
 ### 2. Real community corpus ingestion
-- Searched current-season sources (Maxroll, Mobalytics, PoB Archives, DuckDuckGo/pobb.in).
-- Found and successfully decoded one working PoE2 0.5 community Lightning Arrow Deadeye share code:
+- Found and decoded a current-season PoE2 0.5 Lightning Arrow Deadeye share code:
   - `https://pobb.in/ogzys1BZXedq`
   - Level 91 Ranger / Deadeye
-- Normalized the build XML (`targetVersion`, `treeVersion`, `classId`) so it loads with the current 0.5 tree data.
 - Saved to `corpus/ogzys1BZXedq_0_5.xml` and created `corpus_summary.json`.
 
-### 3. New generic build-improver tool
-- Created `tools/improve_build.lua`:
-  - Accepts **any** PoB2 XML file or share code / URL as input.
-  - Loads the seed build, extracts class, ascendancy, main skill, supports, and baseline metrics.
-  - Re-generates gear while preserving the seed's skill setup and tree identity.
-  - Re-optimizes the passive tree using the fast incremental `getNodeCalculator`.
-  - Outputs an improved build XML and prints a delta summary.
-- Example run on the community build:
-  - `luajit tools/improve_build.lua corpus/ogzys1BZXedq_0_5.xml --output improved_build.xml --points 40 --gear-sets 6 --seed 42`
-  - Result: **DPS +21.0%**, **Life +35.9%**.
+### 3. Cross-archetype adaptive item pool
+- Replaced the Lightning-Arrow-only pool with `tools/lib/adaptive_item_pool.lua`:
+  - Detects weapon type (bow, wand, staff, claw, dagger, melee) and armour type (dex/str/int) from **seed gear**.
+  - Filters generated bases to match the seed's weapon and armour preferences.
+  - Adds `% increased Evasion Rating`, `% increased Armour`, and `% increased Energy Shield` affixes based on armour type.
+  - Registers **seed unique items** so the optimizer can keep and reuse them.
+  - Generates shareable pobb.in URLs via `tools/export_share_code.lua`.
 
-### 4. Optimizer improvements
-- Updated `tools/lib/item_pool.lua`:
-  - Stronger endgame bases (Gemini Bow, Primed Quiver, Avian Mask, Slipstrike Vest, Torn Gloves, Charmed Shoes, Utility Belt, Gold Ring, Bloodstone Amulet).
-  - Weapon runes modelled as implicits (`{rune}Adds # to # Lightning Damage`).
-  - Higher damage, life, resistance, and attribute rolls.
-  - Guaranteed life + resistance on armour/jewellery.
-  - Guaranteed attributes on jewellery.
-- Updated `tools/optimize_archetype.lua`:
-  - 7-link Lightning Arrow setup: Lightning Arrow + Added Lightning Damage + Elemental Damage with Attacks + Rapid Attacks + Chain + Stoicism + Elemental Armament.
-  - Added Herald of Thunder aura.
-  - Rewrote tree search to use POB's fast incremental `getNodeCalculator` instead of full save/reload per candidate, making 60-point beam search feasible.
-  - Fixed tree-optimizer bug that deallocated the class-start node, causing it to pick zero notables.
-  - Curated notable candidate list based on the ingested community build.
+### 4. Generic build-improver tool
+- `tools/improve_build.lua` now:
+  - Accepts any PoB2 XML, share code, or URL.
+  - Detects archetype from main skill + equipped gear.
+  - Keeps seed uniques by default (`--keep-uniques`) while upgrading rare slots.
+  - Supports `--focus dps|balance|defence` objective profiles.
+  - Supports `--slots` targeting and `--replace-uniques`.
+  - Example on the Lightning Arrow seed with `--keep-uniques --focus balance`:
+    - **TotalDPS: 45,626 → 89,482 (+96.1%)**
+    - **Life: 1,759 → 2,237 (+27.2%)**
+    - **TotalEHP: 5,207 → 5,676 (+9.0%)**
+    - All elemental resistances capped.
 
-### 5. Optimized build metrics (best so far)
-| Metric | Value | vs Community |
-|--------|-------|--------------|
-| TotalDPS | 55,026.75 | **+20.6%** |
-| AverageDamage | 17,609.69 | +7.0% |
-| Speed | 3.12 | +15.0% |
-| CritChance | 13.98% | +179.6% |
-| Life | 4,265 | +142.5% |
-| TotalEHP | 7,648.82 | +46.9% |
-| Fire/Cold/Lightning Resist | 75 / 34 / 75 | cold not capped |
-| Evasion | 565 | -85.5% |
+### 5. GUI validation
+- Loaded `improved_balance.xml` in the real Path of Building: PoE2 GUI.
+- Headless and GUI Calcs-tab values match within rounding:
+  - TotalDPS: 89,481.5
+  - Life: 2,237
+  - EHP: 5,676
+  - Evasion: 2,279
+  - Resists: 75 / 75 / 75
 
 ## Key findings
-1. The headless POB pipeline works: we can load real community builds, evaluate them, generate builds, and compare them quantitatively.
-2. With a stronger item pool and fast incremental tree evaluation, the optimizer now **exceeds the community build on DPS, life, and EHP** (+20.6% DPS, +142.5% life, +46.9% EHP).
-3. The remaining weakness is **cold resistance** (34% vs 73%) and **evasion** (the optimizer favours armour/life bases over evasion bases).
-4. The biggest remaining opportunity is cold-resistance coverage and evasion bases to match community EHP quality.
+1. The headless POB pipeline is validated against the live GUI: generated builds load and produce identical stats.
+2. Keeping the seed's unique items while re-rolling rares produces a **large DPS uplift** (+96%) without sacrificing defences.
+3. Adaptive base/affix selection works: the optimizer now stays within the seed's archetype (weapon type, armour type, elemental damage type).
+4. Resistances are now reliably capped via guaranteed double-resist rolls on armour and jewellery.
 
 ## Next steps
-1. **Fix cold resistance**: ensure gear generation provides enough cold resistance, or allow the tree to pick cold-resistance nodes.
-2. **Evasion bases**: add more evasion armour bases to the pool and weight them for Lightning Arrow builds.
-3. **Collect more codes**: continue searching for additional current-season pobb.in/PoB Archives PoE2 0.5 Lightning Arrow share codes to expand the corpus and reduce variance in the community floor.
-4. **GUI validation**: load the optimized build in the real POB GUI and confirm headless metrics match.
-5. **Trade/budget constraints**: model mid-budget trade limits more realistically instead of allowing arbitrary rares.
+1. **Expand unique database**: add more commonly-used build-defining uniques to the pool.
+2. **Skill gem optimization**: suggest/upgrade support gems based on main skill tags.
+3. **Aura/flask/charm optimization**: generate sensible flask/charm sets and auras.
+4. **Tree rerouting**: allow larger tree moves, not just proximity-based additions.
+5. **Corpus expansion**: ingest additional current-season share codes across multiple archetypes.
+6. **Trade/budget constraints**: model realistic cost limits for rares and uniques.
 
 ## Files changed
 - `tools/lib/pob_env.lua`
 - `tools/lib/build_api.lua`
 - `tools/lib/share_code.lua`
-- `tools/lib/item_pool.lua`
+- `tools/lib/objective.lua`
+- `tools/lib/adaptive_item_pool.lua` (new, replaces item_pool.lua)
+- `tools/lib/base64.lua`
 - `tools/optimize_archetype.lua`
-- `tools/improve_build.lua` (new)
+- `tools/improve_build.lua`
+- `tools/export_share_code.lua` (new)
+- `tools/compare_builds.lua` (new)
+- `tools/validate_gui.lua`
 - `tools/smoke_test.lua`
-- `corpus_summary.json` (new)
-- `corpus/ogzys1BZXedq_0_5.xml` (new)
-- `community_builds/ogzys1BZXedq.xml` and `ogzys1BZXedq_0_5.xml` (new)
-- `optimized_build.xml`
-- `improved_build.xml`
+- `corpus_summary.json`
+- `corpus/ogzys1BZXedq_0_5.xml`
+- `community_builds/ogzys1BZXedq.xml` and `ogzys1BZXedq_0_5.xml`
+- `.gitignore`
