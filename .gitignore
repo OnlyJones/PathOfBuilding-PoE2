@@ -34,6 +34,14 @@ src/TreeData/**/*.scm
 src/TreeData/**/*.txt
 src/TreeData/**/*.bat
  
+# Optimizer artifacts
+__*.xml
+*.pob
+optimized_build.xml
+improved_build.xml
+improved_test_build.xml
+test_build.xml
+
 # PoB Trader
 *_currency_values.json
 

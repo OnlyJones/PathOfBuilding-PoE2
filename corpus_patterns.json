@@ -1,0 +1,67 @@
+{
+  "ascendancies":{
+    "Deadeye":1
+  },
+  "builds":1,
+  "classes":{
+    "Ranger":1
+  },
+  "metrics":{
+    "Life":{
+      "max":65,
+      "mean":65,
+      "min":65,
+      "std":0
+    },
+    "TotalDPS":{
+      "max":2.289515625,
+      "mean":2.289515625,
+      "min":2.289515625,
+      "std":0
+    },
+    "TotalEHP":{
+      "max":47.758203222843,
+      "mean":47.758203222843,
+      "min":47.758203222843,
+      "std":0
+    }
+  },
+  "topConfigFlags":{
+    "ConcPathBypassCD":1,
+    "FlickerStrikeBypassCD":1,
+    "VigilantStrikeBypassCD":1,
+    "companionInPresence":1,
+    "conditionBoss":1,
+    "conditionChampionIntimidate":1,
+    "conditionCombat":1,
+    "conditionEffective":1,
+    "inDemonForm":1,
+    "questAct 1ClearfellBeira":1,
+    "questAct 1FreythornKing In The Mists":1,
+    "questAct 1Ogham ManorCandlemass":1,
+    "questAct 2Spires of DesharSisters of Garukhan Shrine":1,
+    "questAct 3Azak BogIgnagduk":1,
+    "questAct 3Jiquani's MachinariumBlackjaw":1,
+    "questAct 4Eye of HinekoraSilent Hall":1,
+    "questInterlude 2Khari CrossingMolten Shrine":1,
+    "questInterlude 3Kriar VillageLythara":1,
+    "raiseSpectreEnableBuffs":1,
+    "raiseSpectreEnableCurses":1,
+    "summonCompanionEnableBuffs":1,
+    "summonCompanionEnableCurses":1,
+    "summonElementalRelicEnableAngerAura":1,
+    "summonElementalRelicEnableHatredAura":1,
+    "summonElementalRelicEnableWrathAura":1,
+    "targetBrandedEnemy":1
+  },
+  "topMasteryNodes":[],
+  "topNotableNodes":[],
+  "topRareBases":[],
+  "topSkills":{
+    "Lightning Arrow":1
+  },
+  "topSupportGems":[],
+  "topUniqueItems":{
+    "New Item":1
+  }
+}
