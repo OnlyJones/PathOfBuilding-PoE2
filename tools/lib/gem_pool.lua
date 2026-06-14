@@ -138,13 +138,19 @@ function M.scoreSupportEstimate(gem, activeTags)
 		score = score + 3
 	end
 	if tags.projectile and activeTags.projectile then score = score + 2 end
-	if tags.lightning and activeTags.lightning then score = score + 2 end
+	if tags.lightning and activeTags.lightning then score = score + 3 end
+	if tags.cold and activeTags.cold then score = score + 2 end
+	if tags.fire and activeTags.fire then score = score + 2 end
 	if tags.elemental and activeTags.elemental then score = score + 2 end
+	if tags.spell and activeTags.spell then score = score + 2 end
 	if tags.attack and activeTags.attack then score = score + 1 end
 	if name:find("attack speed") or name:find("rapid") then score = score + 3 end
+	if name:find("cast speed") or name:find("rapid casting") then score = score + 3 end
 	if name:find("critical") or name:find("crit") then score = score + 2 end
 	if name:find("chain") or name:find("pierce") or name:find("fork") then score = score + 2 end
 	if name:find("additional projectile") or name:find("multishot") then score = score + 2 end
+	if name:find("spell level") or name:find("level of all spell") then score = score + 4 end
+	if name:find("lightning mastery") then score = score + 4 end
 	if name:find("culling") then score = score + 1 end
 	if name:find("life leech") or name:find("mana leech") then score = score + 1 end
 

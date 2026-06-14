@@ -32,6 +32,7 @@ end
 
 M.baseFileMap = {
 	weapon = { "wand", "staff", "sceptre", "bow", "crossbow", "sword", "axe", "mace", "claw", "dagger", "spear", "flail" },
+	offhand = { "sceptre", "wand", "shield" },
 	quiver = { "quiver" },
 	helmet = { "helmet" },
 	body = { "body" },
@@ -87,6 +88,7 @@ end
 -- Defaults are populated from src/Data/Bases/*.lua at module load.
 M.basePools = {
 	weapon = {},
+	offhand = {},
 	quiver = {},
 	helmet = {},
 	body = {},
@@ -108,6 +110,9 @@ M.populateBasePools()
 -- If a slot has no valid bases loaded (e.g., loading failed), fall back to a small safe list.
 if #M.basePools.weapon == 0 then
 	M.basePools.weapon = { "Volatile Wand", "Permafrost Staff", "Gemini Bow", "Longsword", "Battle Axe", "Mace" }
+end
+if #M.basePools.offhand == 0 then
+	M.basePools.offhand = { "Stoic Sceptre", "Crystal Focus", "Hardwood Targe", "Braced Tower Shield" }
 end
 if #M.basePools.quiver == 0 then
 	M.basePools.quiver = { "Primed Quiver", "Broadhead Quiver" }
@@ -136,6 +141,7 @@ end
 
 M.slotMap = {
 	weapon = "Weapon 1",
+	offhand = "Weapon 2",
 	quiver = "Weapon 2",
 	helmet = "Helmet",
 	body = "Body Armour",
@@ -146,10 +152,38 @@ M.slotMap = {
 	amulet = "Amulet",
 }
 
+-- Reverse lookup: PoB slot -> canonical generation slot.
+M.slotReverse = {}
+for canon, pobSlot in pairs(M.slotMap) do
+	M.slotReverse[pobSlot] = canon
+end
+
+-- Detect whether Weapon 2 is a quiver or an off-hand weapon/shield.
+function M.detectOffhandType(seedItems)
+	local item = seedItems and seedItems["Weapon 2"]
+	if not item or not item.baseName then
+		return "none"
+	end
+	local base = item.baseName:lower()
+	if base:find("quiver", 1, true) then
+		return "quiver"
+	end
+	if base:find("shield", 1, true) or base:find("targe", 1, true) or base:find("buckler", 1, true) or base:find("tower", 1, true) then
+		return "shield"
+	end
+	if base:find("sceptre", 1, true) then
+		return "sceptre"
+	end
+	if base:find("wand", 1, true) then
+		return "wand"
+	end
+	return "none"
+end
+
 -- === Weapon / armour type detection ===
 M.weaponPatterns = {
-	bow = { "bow" },
 	crossbow = { "crossbow" },
+	bow = { "bow" },
 	wand = { "wand" },
 	staff = { "staff", "branch" },
 	sceptre = { "sceptre" },
@@ -165,6 +199,9 @@ M.armourPatterns = {
 	int = { "robe", "cap", "mitts", "circlet", "slippers", "tiara", "cowl", "hood", "vestment", "cassock" },
 }
 
+-- Ordered weapon types for deterministic detection (more specific before generic).
+M.weaponTypeOrder = { "crossbow", "bow", "wand", "staff", "sceptre", "claw", "dagger", "one_handed_melee", "two_handed_melee" }
+
 function M.detectWeaponType(seedItems)
 	local slotReverse = {}
 	for canon, pobSlot in pairs(M.slotMap) do
@@ -174,16 +211,16 @@ function M.detectWeaponType(seedItems)
 		local canon = slotReverse[slotName] or slotName
 		if canon == "weapon" and item.baseName then
 			local base = item.baseName:lower()
-			for wtype, patterns in pairs(M.weaponPatterns) do
-				for _, pat in ipairs(patterns) do
+			for _, wtype in ipairs(M.weaponTypeOrder) do
+				for _, pat in ipairs(M.weaponPatterns[wtype]) do
 					if base:find(pat, 1, true) then
-						return wtype
+						return wtype, (wtype == "two_handed_melee")
 					end
 				end
 			end
 		end
 	end
-	return nil
+	return nil, false
 end
 
 function M.detectArmourType(seedItems)
@@ -376,14 +413,14 @@ function M.buildAffixes(archetype)
 	if isCasterWeapon then
 		-- Spell weapons: prioritize spell damage, cast speed, +levels, crit for spells.
 		for _, dt in ipairs(dmgTypes) do
-			t_insert(M.affixes.weapon, { weight = 18, text = function() return "Adds " .. fmtRoll(20, 55) .. " to " .. fmtRoll(100, 220) .. " " .. dt .. " Damage to Spells" end })
+			t_insert(M.affixes.weapon, { weight = 14, text = function() return "Adds " .. fmtRoll(20, 55) .. " to " .. fmtRoll(100, 220) .. " " .. dt .. " Damage to Spells" end })
 		end
-		t_insert(M.affixes.weapon, { weight = 22, text = function() return (randomRoll(80, 160)) .. "% increased Spell Damage" end })
-		t_insert(M.affixes.weapon, { weight = 18, text = function() return (randomRoll(25, 55)) .. "% increased Cast Speed" end })
-		t_insert(M.affixes.weapon, { weight = 16, text = function() return "+" .. randomRoll(2, 5) .. " to Level of all Spell Skills" end })
-		t_insert(M.affixes.weapon, { weight = 14, text = function() return (randomRoll(60, 130)) .. "% increased Critical Hit Chance for Spells" end })
-		t_insert(M.affixes.weapon, { weight = 14, text = function() return "Gain " .. randomRoll(10, 30) .. "% of Elemental Damage as Extra " .. (dmgTypes[1] or "Lightning") .. " Damage" end })
-		t_insert(M.affixes.weapon, critMulti)
+		t_insert(M.affixes.weapon, { weight = 26, text = function() return (randomRoll(100, 180)) .. "% increased Spell Damage" end })
+		t_insert(M.affixes.weapon, { weight = 20, text = function() return (randomRoll(30, 60)) .. "% increased Cast Speed" end })
+		t_insert(M.affixes.weapon, { weight = 20, text = function() return "+" .. randomRoll(2, 5) .. " to Level of all Spell Skills" end })
+		t_insert(M.affixes.weapon, { weight = 16, text = function() return (randomRoll(70, 140)) .. "% increased Critical Hit Chance for Spells" end })
+		t_insert(M.affixes.weapon, { weight = 16, text = function() return "Gain " .. randomRoll(12, 35) .. "% of Elemental Damage as Extra " .. (dmgTypes[1] or "Lightning") .. " Damage" end })
+		t_insert(M.affixes.weapon, { weight = 12, text = function() return "+" .. randomRoll(25, 55) .. "% to Critical Damage Bonus" end })
 		if isSceptre then
 			-- Minion sceptres can also roll minion levels/damage.
 			t_insert(M.affixes.weapon, { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Minion Skills" end })
@@ -406,6 +443,7 @@ function M.buildAffixes(archetype)
 			t_insert(M.affixes.weapon, elemDmgWithAttacks)
 			t_insert(M.affixes.weapon, { weight = 12, text = function() return (randomRoll(15, 35)) .. "% increased Reload Speed" end })
 		elseif isMelee then
+			t_insert(M.affixes.weapon, { weight = 24, text = function() return "Adds " .. fmtRoll(30, 80) .. " to " .. fmtRoll(90, 180) .. " Physical Damage" end })
 			t_insert(M.affixes.weapon, meleePhysical)
 			t_insert(M.affixes.weapon, meleeAttackSpeed)
 		end
@@ -434,6 +472,37 @@ function M.buildAffixes(archetype)
 		{ weight = 5, text = function() return "Projectiles Pierce an additional Target" end },
 		{ weight = 5, text = function() return "+" .. randomRoll(25, 60) .. " to Dexterity" end },
 	} or {}
+
+	-- Off-hand (sceptre/wand/shield/focus) affixes.  For casters we mirror caster-weapon mods;
+	-- for shields we fall back to defensive stats.
+	M.affixes.offhand = {}
+	if isSpell or isCasterWeapon or isTotem then
+		for _, dt in ipairs(dmgTypes) do
+			t_insert(M.affixes.offhand, { weight = 14, text = function() return "Adds " .. fmtRoll(10, 35) .. " to " .. fmtRoll(50, 140) .. " " .. dt .. " Damage to Spells" end })
+		end
+		t_insert(M.affixes.offhand, { weight = 20, text = function() return (randomRoll(60, 130)) .. "% increased Spell Damage" end })
+		t_insert(M.affixes.offhand, { weight = 16, text = function() return (randomRoll(15, 35)) .. "% increased Cast Speed" end })
+		t_insert(M.affixes.offhand, { weight = 14, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Spell Skills" end })
+		t_insert(M.affixes.offhand, { weight = 12, text = function() return (randomRoll(40, 100)) .. "% increased Critical Hit Chance for Spells" end })
+		t_insert(M.affixes.offhand, { weight = 10, text = function() return "Gain " .. randomRoll(8, 20) .. "% of Elemental Damage as Extra " .. (dmgTypes[1] or "Lightning") .. " Damage" end })
+		t_insert(M.affixes.offhand, { weight = 8, text = function() return "+" .. randomRoll(20, 45) .. "% to Critical Damage Bonus" end })
+	elseif isMinion then
+		t_insert(M.affixes.offhand, { weight = 18, text = function() return (randomRoll(60, 120)) .. "% increased Minion Damage" end })
+		t_insert(M.affixes.offhand, { weight = 14, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Minion Skills" end })
+		t_insert(M.affixes.offhand, { weight = 12, text = function() return (randomRoll(25, 55)) .. "% increased Minion maximum Life" end })
+		t_insert(M.affixes.offhand, { weight = 10, text = function() return (randomRoll(15, 35)) .. "% increased Minion Attack Speed" end })
+	else
+		-- Generic / shield defensive pool.
+		t_insert(M.affixes.offhand, { weight = 14, text = function() return "+" .. randomRoll(60, 140) .. " to maximum Life" end })
+		t_insert(M.affixes.offhand, { weight = 10, text = function() return "+" .. randomRoll(25, 55) .. "% to " .. (dmgTypes[1] or "Lightning") .. " Resistance" end })
+		t_insert(M.affixes.offhand, { weight = 8, text = function() return "+" .. randomRoll(25, 55) .. "% to Fire Resistance" end })
+		t_insert(M.affixes.offhand, { weight = 8, text = function() return "+" .. randomRoll(25, 55) .. "% to Cold Resistance" end })
+		t_insert(M.affixes.offhand, { weight = 8, text = function() return (randomRoll(15, 35)) .. "% increased Armour" end })
+		t_insert(M.affixes.offhand, { weight = 8, text = function() return (randomRoll(15, 35)) .. "% increased Energy Shield" end })
+		if isAttack then
+			t_insert(M.affixes.offhand, { weight = 10, text = function() return (randomRoll(15, 35)) .. "% increased Attack Damage" end })
+		end
+	end
 
 	M.affixes.gloves = dmgPrefix("gloves")
 	t_insert(M.affixes.gloves, { weight = 11, text = function() return "+" .. randomRoll(
@@ -700,43 +769,43 @@ local function baseDefences(slot, tier, armourType)
 	armourType = armourType or "dex"
 	if slot == "body" then
 		if armourType == "dex" then
-			local minArm = 40 + tier * 40
-			local maxArm = minArm + tier * 30
-			local minEva = 300 + tier * 220
-			local maxEva = minEva + tier * 200
+			local minArm = 100 + tier * 80
+			local maxArm = minArm + tier * 60
+			local minEva = 500 + tier * 350
+			local maxEva = minEva + tier * 300
 			return "Armour: " .. randomRoll(minArm, maxArm) .. "\nEvasion: " .. randomRoll(minEva, maxEva)
 		elseif armourType == "str" then
-			local minArm = 500 + tier * 300
-			local maxArm = minArm + tier * 250
+			local minArm = 2500 + tier * 1500
+			local maxArm = minArm + tier * 1200
 			return "Armour: " .. randomRoll(minArm, maxArm)
 		elseif armourType == "int" then
-			local minES = 200 + tier * 160
-			local maxES = minES + tier * 140
+			local minES = 500 + tier * 350
+			local maxES = minES + tier * 280
 			return "Energy Shield: " .. randomRoll(minES, maxES)
 		end
 	elseif slot == "helmet" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(200 + tier * 120, 300 + tier * 180)
+			return "Evasion: " .. randomRoll(300 + tier * 180, 500 + tier * 280)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(300 + tier * 200, 450 + tier * 300)
+			return "Armour: " .. randomRoll(1200 + tier * 800, 2000 + tier * 1300)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(150 + tier * 100, 250 + tier * 160)
+			return "Energy Shield: " .. randomRoll(250 + tier * 160, 400 + tier * 260)
 		end
 	elseif slot == "gloves" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(80 + tier * 60, 140 + tier * 100)
+			return "Evasion: " .. randomRoll(120 + tier * 90, 220 + tier * 150)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(120 + tier * 90, 200 + tier * 150)
+			return "Armour: " .. randomRoll(500 + tier * 350, 900 + tier * 600)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(60 + tier * 50, 110 + tier * 90)
+			return "Energy Shield: " .. randomRoll(100 + tier * 80, 180 + tier * 140)
 		end
 	elseif slot == "boots" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(140 + tier * 90, 240 + tier * 150)
+			return "Evasion: " .. randomRoll(220 + tier * 140, 380 + tier * 240)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(200 + tier * 130, 320 + tier * 210)
+			return "Armour: " .. randomRoll(800 + tier * 520, 1400 + tier * 840)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(90 + tier * 70, 160 + tier * 120)
+			return "Energy Shield: " .. randomRoll(150 + tier * 120, 280 + tier * 200)
 		end
 	end
 	return ""
@@ -768,7 +837,17 @@ local function weightedPickWithoutReplacement(poolRef)
 end
 
 function M.generateRare(slot, base, affixCount, quality)
-	base = base or (M.basePools[slot] and M.basePools[slot][math.random(1, #M.basePools[slot])])
+	if not base and M.basePools[slot] and #M.basePools[slot] > 0 then
+		-- Prefer the seed's base (first in pool) for melee/attack weapons where base
+		-- damage matters, but allow exploration.  Casters benefit more from affix rolls.
+		local preferSeed = (slot == "weapon" and M.archetype and (M.archetype.melee or M.archetype.crossbow)) or false
+		if preferSeed and math.random() < 0.6 then
+			base = M.basePools[slot][1]
+		else
+			base = M.basePools[slot][math.random(1, #M.basePools[slot])]
+		end
+	end
+	base = base or "Unknown Base"
 	affixCount = affixCount or 5
 	quality = quality or 20
 	local tier = math.floor((M.archetype and M.archetype.level or 90) / 20) + 1
@@ -788,18 +867,29 @@ function M.generateRare(slot, base, affixCount, quality)
 		end
 	end
 
-	-- Weapon runes: flat elemental damage, modelled as implicits
+	-- Weapon runes: flat damage, modelled as implicits.  Melee physical builds use
+	-- physical runes; elemental builds use the matched element.
 	if slot == "weapon" then
 		local runeCount = 3
 		local dmgType = M.archetype and M.archetype.elemental and next(M.archetype.elemental) or "Lightning"
+		if M.archetype.melee and (M.archetype.physical or not next(M.archetype.elemental or {})) then
+			dmgType = "Physical"
+		end
 		dmgType = dmgType:gsub("^%l", string.upper)
 		lines[4] = "Implicits: " .. runeCount
 		for i = 1, runeCount do
-			t_insert(lines, "{rune}Adds " .. randomRoll(2, 5) .. " to " .. randomRoll(140, 190) .. " " .. dmgType .. " Damage")
+			if dmgType == "Physical" then
+				t_insert(lines, "{rune}Adds " .. randomRoll(2, 6) .. " to " .. randomRoll(12, 28) .. " " .. dmgType .. " Damage")
+			else
+				t_insert(lines, "{rune}Adds " .. randomRoll(2, 5) .. " to " .. randomRoll(140, 190) .. " " .. dmgType .. " Damage")
+			end
 		end
 	else
 		lines[4] = "Implicits: 0"
 	end
+
+	local isCasterOffhand = slot == "offhand" and (M.archetype.offhandType == "sceptre" or M.archetype.offhandType == "wand")
+	local isShield = slot == "offhand" and M.archetype.offhandType == "shield"
 
 	local pool = M.affixes[slot]
 	local poolCopy = { [1] = {} }
@@ -808,11 +898,11 @@ function M.generateRare(slot, base, affixCount, quality)
 	end
 	local chosen = {}
 
-	-- Guarantee life + two resistances on armour and jewellery
-	if slot ~= "weapon" and slot ~= "quiver" then
+	-- Guarantee life + two resistances on armour and jewellery; shields get life + res too.
+	if slot ~= "weapon" and slot ~= "quiver" and not isCasterOffhand then
 		t_insert(chosen, "+" .. randomRoll(
-			slot == "body" and 90 or (slot == "helmet" and 70 or (slot == "belt" and 80 or 60)),
-			slot == "body" and 200 or (slot == "helmet" and 140 or (slot == "belt" and 160 or 130))
+			slot == "body" and 90 or (slot == "helmet" and 70 or (slot == "belt" and 80 or (isShield and 60 or 60))),
+			slot == "body" and 200 or (slot == "helmet" and 140 or (slot == "belt" and 160 or (isShield and 130 or 130)))
 		) .. " to maximum Life")
 		local resistType1 = ({"Fire", "Cold", "Lightning"})[math.random(1, 3)]
 		t_insert(chosen, "+" .. randomRoll(25, 55) .. "% to " .. resistType1 .. " Resistance")
@@ -821,6 +911,18 @@ function M.generateRare(slot, base, affixCount, quality)
 			resistType2 = ({"Fire", "Cold", "Lightning"})[math.random(1, 3)]
 		until resistType2 ~= resistType1
 		t_insert(chosen, "+" .. randomRoll(25, 55) .. "% to " .. resistType2 .. " Resistance")
+		-- Armour/ES stacking: guarantee a flat defence affix on armour slots.
+		if armourType == "str" and (slot == "body" or slot == "helmet" or slot == "gloves" or slot == "boots") then
+			t_insert(chosen, "+" .. randomRoll(
+				slot == "body" and 400 or (slot == "helmet" and 200 or (slot == "gloves" and 100 or 150)),
+				slot == "body" and 800 or (slot == "helmet" and 400 or (slot == "gloves" and 200 or 300))
+			) .. " to Armour")
+		elseif armourType == "int" and (slot == "body" or slot == "helmet" or slot == "gloves" or slot == "boots") then
+			t_insert(chosen, "+" .. randomRoll(
+				slot == "body" and 150 or (slot == "helmet" and 80 or (slot == "gloves" and 40 or 60)),
+				slot == "body" and 300 or (slot == "helmet" and 160 or (slot == "gloves" and 80 or 120))
+			) .. " to maximum Energy Shield")
+		end
 	end
 
 	-- Guarantee attributes on jewellery
@@ -836,7 +938,37 @@ function M.generateRare(slot, base, affixCount, quality)
 		t_insert(chosen, "+" .. randomRoll(15, 30) .. " to Strength")
 	end
 
-	for i = #chosen + 1, affixCount do
+	-- Guarantee attributes on all rare items to help meet gem requirements.
+	-- This is added as a bonus affix so it does not displace damage/defence mods.
+	local attrPool = {}
+	if primaryAttr then
+		t_insert(attrPool, { attr = primaryAttr, weight = 3 })
+	end
+	if secondaryAttr then
+		t_insert(attrPool, { attr = secondaryAttr, weight = 2 })
+	end
+	for _, a in ipairs({"Strength", "Dexterity", "Intelligence"}) do
+		if a ~= primaryAttr and a ~= secondaryAttr then
+			t_insert(attrPool, { attr = a, weight = 1 })
+		end
+	end
+	if #attrPool > 0 then
+		local total = 0
+		for _, e in ipairs(attrPool) do total = total + e.weight end
+		local roll = math.random(1, total)
+		local acc = 0
+		local picked
+		for _, e in ipairs(attrPool) do
+			acc = acc + e.weight
+			if roll <= acc then picked = e.attr; break end
+		end
+		local attrRoll = randomRoll(15, 45)
+		if slot == "amulet" then attrRoll = randomRoll(40, 75)
+		elseif slot == "belt" then attrRoll = randomRoll(25, 55) end
+		t_insert(chosen, "+" .. attrRoll .. " to " .. picked)
+	end
+
+	for i = #chosen + 1, affixCount + 1 do
 		local pick = weightedPickWithoutReplacement(poolCopy)
 		if pick then
 			t_insert(chosen, pick)
@@ -895,14 +1027,15 @@ function M.configure(seedInfo)
 	end
 
 	-- Detect weapon type and armour type from seed gear (overrides gem hints if present)
-	local weaponType = M.detectWeaponType(seedInfo and seedInfo.items)
+	local weaponType, isTwoHanded = M.detectWeaponType(seedInfo and seedInfo.items)
 	if weaponType then
-		M.archetype.bow = weaponType == "bow" or weaponType == "crossbow"
+		M.archetype.bow = weaponType == "bow"
 		M.archetype.crossbow = weaponType == "crossbow"
 		M.archetype.wand = weaponType == "wand"
 		M.archetype.staff = weaponType == "staff"
 		M.archetype.sceptre = weaponType == "sceptre"
 		M.archetype.melee = weaponType == "one_handed_melee" or weaponType == "two_handed_melee" or weaponType == "claw" or weaponType == "dagger"
+		M.archetype.twoHanded = isTwoHanded
 		M.archetype.attack = M.archetype.bow or M.archetype.melee or M.archetype.crossbow
 	end
 	M.archetype.armourType = M.detectArmourType(seedInfo and seedInfo.items) or "dex"
@@ -919,8 +1052,10 @@ function M.configure(seedInfo)
 	end
 
 	local weaponPred
-	if M.archetype.bow or M.archetype.crossbow then
-		weaponPred = function(b) return b:find("bow", 1, true) or b:find("crossbow", 1, true) end
+	if M.archetype.bow then
+		weaponPred = function(b) return b:find("bow", 1, true) and not b:find("crossbow", 1, true) end
+	elseif M.archetype.crossbow then
+		weaponPred = function(b) return b:find("crossbow", 1, true) end
 	elseif M.archetype.wand then
 		weaponPred = function(b) return b:find("wand", 1, true) end
 	elseif M.archetype.staff then
@@ -932,17 +1067,35 @@ function M.configure(seedInfo)
 				return b:find("sword", 1, true) or b:find("axe", 1, true) or b:find("mace", 1, true)
 					or b:find("mallet", 1, true) or b:find("claw", 1, true) or b:find("dagger", 1, true)
 					or b:find("kris", 1, true) or b:find("skewer", 1, true) or b:find("knife", 1, true)
-					or b:find("maul", 1, true) or b:find("club", 1, true) or b:find("greatclub", 1, true)
 			end
 		end
 	if weaponPred then
 		M.basePools.weapon = filterByType(M.basePools.weapon, weaponPred)
+		if M.archetype.twoHanded then
+			M.basePools.weapon = filterByType(M.basePools.weapon, function(b)
+				return b:find("great", 1, true) or b:find("maul", 1, true) or b:find("mallet", 1, true)
+			end)
+		end
 		M.basePools.weapon = M.filterValidBases("weapon", M.basePools.weapon)
 		if M.archetype.bow then
 			M.basePools.quiver = M.filterValidBases("quiver", { "Primed Quiver", "Broadhead Quiver" })
 		else
 			M.basePools.quiver = {}
 		end
+	end
+
+	-- Set up off-hand base pool from seed (sceptre, wand, shield, or quiver).
+	M.archetype.offhandType = M.detectOffhandType(seedInfo and seedInfo.items)
+	if M.archetype.offhandType == "quiver" then
+		M.basePools.offhand = M.basePools.quiver
+	elseif M.archetype.offhandType == "shield" then
+		M.basePools.offhand = M.filterValidBases("offhand", { "Hardwood Targe", "Braced Tower Shield", "Gilded Buckler" })
+	elseif M.archetype.offhandType == "sceptre" then
+		M.basePools.offhand = M.filterValidBases("offhand", { "Stoic Sceptre", "Omen Sceptre" })
+	elseif M.archetype.offhandType == "wand" then
+		M.basePools.offhand = M.filterValidBases("offhand", { "Crystal Focus", "Volatile Wand" })
+	else
+		M.basePools.offhand = M.filterValidBases("offhand", M.basePools.offhand)
 	end
 
 	local armourPred
@@ -994,7 +1147,7 @@ end
 function M.generateSet(opts)
 	opts = opts or {}
 	local set = {}
-	local slots = { "weapon", "quiver", "helmet", "body", "gloves", "boots", "belt", "ring", "ring", "amulet" }
+	local slots = { "weapon", "helmet", "body", "gloves", "boots", "belt", "ring", "ring", "amulet" }
 	for _, slot in ipairs(slots) do
 		local isUnique = opts.uniqueChance and math.random() < opts.uniqueChance
 		local raw
@@ -1004,6 +1157,18 @@ function M.generateSet(opts)
 			raw = M.generateRare(slot, nil, opts.affixCount, opts.quality)
 		end
 		t_insert(set, { slot = M.slotMap[slot], raw = raw })
+	end
+
+	-- Weapon 2: quiver for bows, off-hand weapon/shield for casters, nothing for 2H.
+	local offhandSlot = M.archetype.offhandType
+	if offhandSlot == "quiver" or offhandSlot == "shield" or offhandSlot == "sceptre" or offhandSlot == "wand" then
+		local offhandRaw
+		if opts.uniqueChance and math.random() < opts.uniqueChance and M.uniques[offhandSlot] and #M.uniques[offhandSlot] > 0 then
+			offhandRaw = M.generateUnique(offhandSlot)
+		else
+			offhandRaw = M.generateRare(offhandSlot, nil, opts.affixCount, opts.quality)
+		end
+		t_insert(set, { slot = "Weapon 2", raw = offhandRaw })
 	end
 
 	-- Generate flasks and charms.

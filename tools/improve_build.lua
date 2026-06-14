@@ -63,6 +63,25 @@ local gemPool = dofile("tools/lib/gem_pool.lua")
 local buffPool = dofile("tools/lib/buff_pool.lua")
 local objective = dofile("tools/lib/objective.lua")
 
+-- Compute a single primary-damage number that works across archetypes.
+local function effectiveDPS(out)
+	out = out or build.calcsTab.mainOutput
+	if not out then return 0 end
+	local dps = out.TotalDPS or 0
+	if dps > 0 then return dps end
+	dps = out.FullDPS or 0
+	if dps > 0 then return dps end
+	dps = (out.AverageDamage or 0) * (out.Speed or 0)
+	if dps > 0 then return dps end
+	if out.Minion then
+		dps = out.Minion.TotalDPS or 0
+		if dps > 0 then return dps end
+		dps = (out.Minion.AverageDamage or 0) * (out.Minion.Speed or 0)
+		if dps > 0 then return dps end
+	end
+	return 0
+end
+
 -- === Load seed build ===
 local xmlText, sourceName
 if input:match("^https?://") or input:match("^%s*[a-zA-Z0-9]+%.[a-zA-Z]") then
@@ -214,7 +233,7 @@ print(string.format("  Allocated nodes: %d", tableCount(seedInfo.treeNodes)))
 -- Capture baseline metrics before modifying
 build.buildFlag = true
 runCallback("OnFrame")
-seedInfo.baseDPS = build.calcsTab.mainOutput.TotalDPS
+seedInfo.baseDPS = effectiveDPS(build.calcsTab.mainOutput)
 seedInfo.baseLife = build.calcsTab.mainOutput.Life
 seedInfo.baseEHP = build.calcsTab.mainOutput.TotalEHP
 print(string.format("  Baseline: DPS %.2f | Life %.0f | EHP %.2f", seedInfo.baseDPS, seedInfo.baseLife, seedInfo.baseEHP))
@@ -254,6 +273,24 @@ elseif focus == "defence" then
 	objConfig.weights.Life = 2.0
 	objConfig.weights.Evasion = 0.005
 	objConfig.gates.minLife = 2500
+end
+
+-- Archetype-aware defensive weights: scale Armour/ES so armour-stackers and ES builds
+-- do not collapse their defensive identity when DPS is optimized.
+local seedArmour = build.calcsTab.mainOutput.Armour or 0
+local seedES = build.calcsTab.mainOutput.EnergyShield or 0
+local seedEHP = build.calcsTab.mainOutput.TotalEHP or 0
+if seedArmour > 10000 then
+	objConfig.weights.Armour = 0.002 + math.min(0.008, seedArmour / 5000000)
+elseif seedArmour > 5000 then
+	objConfig.weights.Armour = 0.001
+end
+if seedES > 2000 then
+	objConfig.weights.EnergyShield = 0.002 + math.min(0.008, seedES / 500000)
+end
+-- Hard floor: do not allow EHP to drop below a fraction of the seed unless focus is dps.
+if focus ~= "dps" and seedEHP > 0 then
+	objConfig.gates.minEHP = math.floor(seedEHP * 0.50)
 end
 
 local function evalBuild()
@@ -821,7 +858,7 @@ for i = 1, gearSetCount do
 	if ok and result then
 		local out = result.raw
 		print(string.format("  DPS %.2f | Life %.0f | EHP %.2f | Score %.2f | Valid %s",
-			out.TotalDPS or 0, out.Life or 0, out.TotalEHP or 0, result.score, tostring(result.valid)))
+			effectiveDPS(out), out.Life or 0, out.TotalEHP or 0, result.score, tostring(result.valid)))
 		for _, r in ipairs(result.reasons) do
 			print("    ! " .. r)
 		end
@@ -840,13 +877,13 @@ os.remove("__improve_template__.xml")
 
 if bestOverall.score > -math.huge then
 	local out = bestOverall.raw
+	local improvedDPS = effectiveDPS(out)
 	print("")
 	print(string.format("Best improved build: DPS %.2f | Life %.0f | EHP %.2f | Score %.2f | Valid %s",
-		out.TotalDPS or 0, out.Life or 0, out.TotalEHP or 0, bestOverall.score, tostring(bestOverall.valid)))
+		improvedDPS, out.Life or 0, out.TotalEHP or 0, bestOverall.score, tostring(bestOverall.valid)))
 	print("Saved to " .. outputPath)
 	print("")
 	print("=== Improvement summary ===")
-	local improvedDPS = out.TotalDPS or 0
 	print(string.format("TotalDPS: %.2f -> %.2f (%.1f%%)", seedInfo.baseDPS or 0, improvedDPS,
 		(seedInfo.baseDPS and seedInfo.baseDPS > 0) and ((improvedDPS - seedInfo.baseDPS) / seedInfo.baseDPS * 100) or 0))
 	print(string.format("Life: %.0f -> %.0f (%.1f%%)", seedInfo.baseLife or 0, out.Life or 0,

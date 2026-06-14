@@ -202,69 +202,72 @@
   "optimizerResults": {
     "ogzys1BZXedq_0_5.xml": {
       "focus": "balance",
-      "TotalDPS": 78923.91,
-      "Life": 2469,
-      "TotalEHP": 6187.45,
-      "deltaDPS": 73.0,
-      "deltaLife": 40.4,
-      "deltaEHP": 18.8
+      "TotalDPS": 58628.94,
+      "Life": 2839,
+      "TotalEHP": 6551.17,
+      "deltaDPS": 28.5,
+      "deltaLife": 61.4,
+      "deltaEHP": 25.8
     },
     "Pzky1uGNEHqD.xml": {
       "focus": "balance",
       "TotalDPS": 0,
       "FullDPS": 0,
-      "Life": 2258,
-      "TotalEHP": 5163.5,
+      "MinionDPS": 2978.05,
+      "Life": 2582,
+      "TotalEHP": 7368.22,
       "deltaDPS": 0,
-      "deltaLife": 9.1,
-      "deltaEHP": -53.2
+      "deltaMinionDPS": 190.3,
+      "deltaLife": 24.8,
+      "deltaEHP": -33.3
     },
     "S0q7p54SFGHC.xml": {
-      "focus": "balance",
-      "TotalDPS": 40842.81,
-      "Life": 2338,
-      "TotalEHP": 8676.25,
-      "deltaDPS": -9.8,
-      "deltaLife": 33.8,
-      "deltaEHP": -31.7
+      "focus": "dps",
+      "TotalDPS": 45019.64,
+      "Life": 2568,
+      "TotalEHP": 9628.22,
+      "deltaDPS": -0.6,
+      "deltaLife": 46.9,
+      "deltaEHP": -24.2
     },
     "S1GJJkikeswW.xml": {
       "focus": "balance",
       "TotalDPS": 0,
-      "FullDPS": 61520.95,
-      "Life": 2372,
-      "TotalEHP": 7217.89,
+      "FullDPS": 79600.49,
+      "Life": 2475,
+      "TotalEHP": 13915.81,
       "deltaDPS": 0,
-      "deltaFullDPS": 167.5,
-      "deltaLife": 6.1,
-      "deltaEHP": -41.1
+      "deltaFullDPS": 246.2,
+      "deltaLife": 10.7,
+      "deltaEHP": 13.5
     },
     "W4PpVcccMEwG.xml": {
       "focus": "dps",
-      "TotalDPS": 42061.41,
-      "Life": 2220,
-      "TotalEHP": 9366.56,
-      "deltaDPS": 106.2,
-      "deltaLife": 8.7,
-      "deltaEHP": -30.8
+      "TotalDPS": 35229.84,
+      "Life": 2361,
+      "TotalEHP": 10884.37,
+      "deltaDPS": 72.7,
+      "deltaLife": 15.6,
+      "deltaEHP": -19.6
     },
     "WbQIFb1l1DP0.xml": {
       "focus": "balance",
-      "TotalDPS": 77822.44,
-      "Life": 3143,
-      "TotalEHP": 9424.68,
-      "deltaDPS": 159.0,
-      "deltaLife": 61.7,
-      "deltaEHP": -31.5
+      "TotalDPS": 64414.90,
+      "Life": 3019,
+      "TotalEHP": 10623.05,
+      "deltaDPS": 114.4,
+      "deltaLife": 55.3,
+      "deltaEHP": -22.8
     },
     "zDcjQC5whnUs.xml": {
       "focus": "balance",
-      "TotalDPS": 15149.28,
-      "Life": 3157,
-      "TotalEHP": 8981.6,
-      "deltaDPS": -44.7,
-      "deltaLife": -3.1,
-      "deltaEHP": -83.6
+      "TotalDPS": 6398.01,
+      "Life": 3532,
+      "TotalEHP": 15835.78,
+      "deltaDPS": -76.6,
+      "deltaLife": 8.4,
+      "deltaEHP": -71.1,
+      "valid": false
     }
   },
   "patterns": {

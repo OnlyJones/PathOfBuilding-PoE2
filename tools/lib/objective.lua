@@ -23,6 +23,7 @@ M.defaultConfig = {
 	},
 	gates = {
 		minLife = 1500,
+		minEHP = nil,
 		minUncappedResist = 0,
 		minStr = 0,
 		minDex = 0,
@@ -81,7 +82,16 @@ function M.evaluate(config)
 		penalty = penalty + short * config.penalties.lifeBelowMin
 	end
 
-	-- Mana reservation gate
+	-- EHP floor gate
+	if config.gates.minEHP then
+		local ehp = out.TotalEHP or 0
+		if ehp < config.gates.minEHP then
+			local short = config.gates.minEHP - ehp
+			t_insert(reasons, string.format("EHP below gate: %.0f/%.0f", ehp, config.gates.minEHP))
+			penalty = penalty + short * 100
+		end
+	end
+
 	local lifeUnres = out.LifeUnreserved
 	if lifeUnres and lifeUnres < 0 then
 		t_insert(reasons, "Negative life reservation")
@@ -108,6 +118,12 @@ function M.evaluate(config)
 		local fallback = out.FullDPS or 0
 		if fallback <= 0 then
 			fallback = (out.AverageDamage or 0) * (out.Speed or 0)
+		end
+		if fallback <= 0 and out.Minion then
+			fallback = out.Minion.TotalDPS or 0
+			if fallback <= 0 then
+				fallback = (out.Minion.AverageDamage or 0) * (out.Minion.Speed or 0)
+			end
 		end
 		if fallback > 0 then
 			score = score + fallback * (config.weights.TotalDPS or 1.0)
