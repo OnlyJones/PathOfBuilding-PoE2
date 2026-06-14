@@ -12,13 +12,14 @@ M.defaultConfig = {
 	weights = {
 		TotalDPS = 1.0,
 		FullDPS = 0.5,
-		AverageDamage = 0.0,
+		AverageDamage = 0.3,
 		Speed = 0.0,
 		CritChance = 0.0,
-		TotalEHP = 0.002,
-		Life = 0.8,
-		Evasion = 0.001,
-		EnergyShield = 0.0,
+		TotalEHP = 0.003,
+		Life = 1.0,
+		Evasion = 0.002,
+		Armour = 0.0002,
+		EnergyShield = 0.0003,
 	},
 	gates = {
 		minLife = 1500,
@@ -100,6 +101,19 @@ function M.evaluate(config)
 			score = score + val * weight
 		end
 	end
+
+	-- Fallback primary-damage metric for archetypes where TotalDPS is not populated.
+	local primaryDPS = out.TotalDPS or 0
+	if primaryDPS <= 0 then
+		local fallback = out.FullDPS or 0
+		if fallback <= 0 then
+			fallback = (out.AverageDamage or 0) * (out.Speed or 0)
+		end
+		if fallback > 0 then
+			score = score + fallback * (config.weights.TotalDPS or 1.0)
+		end
+	end
+
 	score = score - penalty
 
 	return {

@@ -31,7 +31,7 @@ local function fmtRoll(min, max)
 end
 
 M.baseFileMap = {
-	weapon = { "wand", "staff", "sceptre", "bow", "sword", "axe", "mace", "claw", "dagger" },
+	weapon = { "wand", "staff", "sceptre", "bow", "crossbow", "sword", "axe", "mace", "claw", "dagger", "spear", "flail" },
 	quiver = { "quiver" },
 	helmet = { "helmet" },
 	body = { "body" },
@@ -149,18 +149,19 @@ M.slotMap = {
 -- === Weapon / armour type detection ===
 M.weaponPatterns = {
 	bow = { "bow" },
+	crossbow = { "crossbow" },
 	wand = { "wand" },
 	staff = { "staff", "branch" },
 	sceptre = { "sceptre" },
 	claw = { "claw" },
 	dagger = { "dagger", "kris", "skewer", "knife" },
 	one_handed_melee = { "sword", "axe", "mace" },
-	two_handed_melee = { "greatsword", "greataxe", "mallet", "maul" },
+	two_handed_melee = { "greatsword", "greataxe", "mallet", "maul", "greatclub" },
 }
 
 M.armourPatterns = {
-	dex = { "vest", "mask", "gloves", "shoes", "boots", "leggings", "slippers" },
-	str = { "plate", "mail", "hat", "helmet", "gauntlets", "greaves", "sabatons" },
+	dex = { "vest", "mask", "gloves", "shoes", "leggings", "slippers", "bracers" },
+	str = { "plate", "mail", "hat", "helmet", "greathelm", "gauntlets", "greaves", "sabatons", "cuirass", "mitts" },
 	int = { "robe", "cap", "mitts", "circlet", "slippers", "tiara", "cowl", "hood", "vestment", "cassock" },
 }
 
@@ -314,11 +315,15 @@ function M.buildAffixes(archetype)
 	local isAttack = archetype.attack
 	local isSpell = archetype.spell
 	local isBow = archetype.bow
+	local isCrossbow = archetype.crossbow
 	local isWand = archetype.wand
 	local isStaff = archetype.staff
 	local isSceptre = archetype.sceptre
 	local isCasterWeapon = isWand or isStaff or isSceptre
 	local isMelee = archetype.melee
+	local isMinion = archetype.minion
+	local isTotem = archetype.totem
+	local isGrenade = archetype.grenade
 	local armourType = archetype.armourType or "dex"
 	local elemental = archetype.elemental or {}
 	local dmgTypes = {}
@@ -329,7 +334,7 @@ function M.buildAffixes(archetype)
 		dmgTypes = { archetype.physical and "Physical" or "Lightning" }
 	end
 
-	local primaryAttr = isSpell and "Intelligence" or "Dexterity"
+	local primaryAttr = isSpell and "Intelligence" or (isMinion and "Intelligence") or (isTotem and "Intelligence") or "Dexterity"
 	local secondaryAttr = (isSpell and not isAttack) and "Dexterity" or "Intelligence"
 
 	local function dmgPrefix(slot)
@@ -347,13 +352,25 @@ function M.buildAffixes(archetype)
 	local globalDmg = { weight = 16, text = function() return (randomRoll(60, 140)) .. "% increased " .. (isSpell and "Spell " or "") .. "Damage" end }
 	local elemDmgWithAttacks = { weight = isAttack and 16 or 0, text = function() return (randomRoll(60, 140)) .. "% increased Elemental Damage with Attacks" end }
 	local attackSpeed = { weight = isAttack and 14 or 0, text = function() return (randomRoll(20, 40)) .. "% increased Attack Speed" end }
-	local castSpeed = { weight = (isSpell or isCasterWeapon) and 16 or 0, text = function() return (randomRoll(15, 35)) .. "% increased Cast Speed" end }
+	local castSpeed = { weight = (isSpell or isCasterWeapon or isTotem or isGrenade) and 16 or 0, text = function() return (randomRoll(15, 35)) .. "% increased Cast Speed" end }
 	local critChance = { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. "% to Critical Hit Chance" end }
 	local spellCritChance = { weight = isCasterWeapon and 12 or 0, text = function() return (randomRoll(50, 120)) .. "% increased Critical Hit Chance for Spells" end }
 	local critMulti = { weight = 9, text = function() return "+" .. randomRoll(20, 55) .. "% to Critical Damage Bonus" end }
 	local attackLevels = { weight = isAttack and 10 or 0, text = function() return "+" .. randomRoll(3, 5) .. " to Level of all Attack Skills" end }
-	local spellLevels = { weight = (isSpell or isCasterWeapon) and 14 or 0, text = function() return "+" .. randomRoll(2, 5) .. " to Level of all Spell Skills" end }
+	local spellLevels = { weight = (isSpell or isCasterWeapon or isTotem) and 14 or 0, text = function() return "+" .. randomRoll(2, 5) .. " to Level of all Spell Skills" end }
 	local additionalArrow = { weight = isBow and 10 or 0, text = function() return "Bow Attacks fire an additional Arrow" end }
+	local minionDamage = { weight = isMinion and 18 or 0, text = function() return (randomRoll(60, 140)) .. "% increased Minion Damage" end }
+	local minionLife = { weight = isMinion and 14 or 0, text = function() return (randomRoll(25, 55)) .. "% increased Minion maximum Life" end }
+	local minionAttackSpeed = { weight = isMinion and 12 or 0, text = function() return (randomRoll(15, 35)) .. "% increased Minion Attack Speed" end }
+	local totemDamage = { weight = isTotem and 18 or 0, text = function() return (randomRoll(60, 140)) .. "% increased Totem Damage" end }
+	local totemLife = { weight = isTotem and 14 or 0, text = function() return (randomRoll(25, 55)) .. "% increased Totem Life" end }
+	local totemPlacementSpeed = { weight = isTotem and 10 or 0, text = function() return (randomRoll(15, 35)) .. "% increased Totem Placement Speed" end }
+	local grenadeDamage = { weight = isGrenade and 18 or 0, text = function() return (randomRoll(60, 140)) .. "% increased Grenade Damage" end }
+	local grenadeArea = { weight = isGrenade and 12 or 0, text = function() return (randomRoll(20, 40)) .. "% increased Grenade Area of Effect" end }
+	local meleePhysical = { weight = isMelee and 16 or 0, text = function() return (randomRoll(60, 140)) .. "% increased Physical Damage" end }
+	local meleeAttackSpeed = { weight = isMelee and 12 or 0, text = function() return (randomRoll(15, 30)) .. "% increased Melee Attack Speed" end }
+	local armourInc = { weight = (armourType == "str" or isMelee) and 12 or 0, text = function() return (randomRoll(25, 55)) .. "% increased Armour" end }
+	local esInc = { weight = (armourType == "int" or isTotem or isMinion) and 12 or 0, text = function() return (randomRoll(25, 55)) .. "% increased Energy Shield" end }
 
 	M.affixes.weapon = {}
 	if isCasterWeapon then
@@ -385,9 +402,27 @@ function M.buildAffixes(archetype)
 			end
 			t_insert(M.affixes.weapon, elemDmgWithAttacks)
 			t_insert(M.affixes.weapon, additionalArrow)
+		elseif isCrossbow then
+			t_insert(M.affixes.weapon, elemDmgWithAttacks)
+			t_insert(M.affixes.weapon, { weight = 12, text = function() return (randomRoll(15, 35)) .. "% increased Reload Speed" end })
+		elseif isMelee then
+			t_insert(M.affixes.weapon, meleePhysical)
+			t_insert(M.affixes.weapon, meleeAttackSpeed)
 		end
 		t_insert(M.affixes.weapon, critChance)
 		t_insert(M.affixes.weapon, critMulti)
+		if isMinion then
+			t_insert(M.affixes.weapon, minionDamage)
+			t_insert(M.affixes.weapon, { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Minion Skills" end })
+		end
+		if isTotem then
+			t_insert(M.affixes.weapon, totemDamage)
+			t_insert(M.affixes.weapon, { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Spell Skills" end })
+		end
+		if isGrenade then
+			t_insert(M.affixes.weapon, grenadeDamage)
+			t_insert(M.affixes.weapon, grenadeArea)
+		end
 	end
 
 	M.affixes.quiver = isBow and {
@@ -411,12 +446,32 @@ function M.buildAffixes(archetype)
 	if isAttack then
 		t_insert(M.affixes.gloves, { weight = 11, text = function() return (randomRoll(12, 30)) .. "% increased Attack Speed" end })
 	end
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.gloves, { weight = 12, text = function() return (randomRoll(15, 35)) .. "% increased Cast Speed" end })
+	end
+	if isSpell or isTotem then
 		t_insert(M.affixes.gloves, { weight = 10, text = function() return (randomRoll(25, 60)) .. "% increased Spell Damage" end })
+	end
+	if isMinion then
+		t_insert(M.affixes.gloves, minionDamage)
+		t_insert(M.affixes.gloves, minionLife)
+	end
+	if isTotem then
+		t_insert(M.affixes.gloves, totemDamage)
+		t_insert(M.affixes.gloves, totemLife)
+	end
+	if isGrenade then
+		t_insert(M.affixes.gloves, grenadeDamage)
+		t_insert(M.affixes.gloves, grenadeArea)
+	end
+	if isMelee then
+		t_insert(M.affixes.gloves, meleePhysical)
+		t_insert(M.affixes.gloves, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
 	end
 	if armourType == "dex" then
 		t_insert(M.affixes.gloves, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Evasion Rating" end })
+	elseif armourType == "str" or isMelee then
+		t_insert(M.affixes.gloves, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Armour" end })
 	elseif armourType == "int" then
 		t_insert(M.affixes.gloves, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Energy Shield" end })
 		t_insert(M.affixes.gloves, { weight = 7, text = function() return "+" .. randomRoll(30, 80) .. " to maximum Energy Shield" end })
@@ -428,16 +483,32 @@ function M.buildAffixes(archetype)
 		{ weight = 7, text = function() return "+" .. randomRoll(25, 55) .. "% to Fire Resistance" end },
 		{ weight = 7, text = function() return "+" .. randomRoll(25, 55) .. "% to Cold Resistance" end },
 	}
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.helmet, { weight = 12, text = function() return (randomRoll(25, 60)) .. "% increased Spell Damage" end })
 		t_insert(M.affixes.helmet, { weight = 10, text = function() return (randomRoll(20, 50)) .. "% increased Critical Hit Chance for Spells" end })
 		t_insert(M.affixes.helmet, { weight = 8, text = function() return "+" .. randomRoll(20, 50) .. " to Intelligence" end })
 	else
 		t_insert(M.affixes.helmet, { weight = 7, text = function() return (randomRoll(15, 35)) .. "% increased Critical Hit Chance" end })
 	end
+	if isMinion then
+		t_insert(M.affixes.helmet, minionDamage)
+		t_insert(M.affixes.helmet, minionLife)
+	end
+	if isTotem then
+		t_insert(M.affixes.helmet, totemDamage)
+		t_insert(M.affixes.helmet, totemLife)
+	end
+	if isGrenade then
+		t_insert(M.affixes.helmet, grenadeDamage)
+		t_insert(M.affixes.helmet, grenadeArea)
+	end
+	if isMelee then
+		t_insert(M.affixes.helmet, meleePhysical)
+		t_insert(M.affixes.helmet, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
+	end
 	if armourType == "dex" then
 		t_insert(M.affixes.helmet, { weight = 9, text = function() return (randomRoll(25, 55)) .. "% increased Evasion Rating" end })
-	elseif armourType == "str" then
+	elseif armourType == "str" or isMelee then
 		t_insert(M.affixes.helmet, { weight = 9, text = function() return (randomRoll(25, 55)) .. "% increased Armour" end })
 	elseif armourType == "int" then
 		t_insert(M.affixes.helmet, { weight = 9, text = function() return (randomRoll(25, 55)) .. "% increased Energy Shield" end })
@@ -451,15 +522,31 @@ function M.buildAffixes(archetype)
 		{ weight = 9, text = function() return "+" .. randomRoll(30, 60) .. "% to Cold Resistance" end },
 		{ weight = 7, text = function() return (randomRoll(6, 18)) .. "% increased maximum Life" end },
 	}
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.body, { weight = 12, text = function() return (randomRoll(30, 70)) .. "% increased Spell Damage" end })
 		t_insert(M.affixes.body, { weight = 8, text = function() return "+" .. randomRoll(30, 70) .. " to Intelligence" end })
 	else
 		t_insert(M.affixes.body, { weight = 5, text = function() return "+" .. randomRoll(25, 55) .. " to " .. primaryAttr end })
 	end
+	if isMinion then
+		t_insert(M.affixes.body, minionDamage)
+		t_insert(M.affixes.body, minionLife)
+	end
+	if isTotem then
+		t_insert(M.affixes.body, totemDamage)
+		t_insert(M.affixes.body, totemLife)
+	end
+	if isGrenade then
+		t_insert(M.affixes.body, grenadeDamage)
+		t_insert(M.affixes.body, grenadeArea)
+	end
+	if isMelee then
+		t_insert(M.affixes.body, meleePhysical)
+		t_insert(M.affixes.body, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
+	end
 	if armourType == "dex" then
 		t_insert(M.affixes.body, { weight = 10, text = function() return (randomRoll(30, 60)) .. "% increased Evasion Rating" end })
-	elseif armourType == "str" then
+	elseif armourType == "str" or isMelee then
 		t_insert(M.affixes.body, { weight = 10, text = function() return (randomRoll(30, 60)) .. "% increased Armour" end })
 	elseif armourType == "int" then
 		t_insert(M.affixes.body, { weight = 10, text = function() return (randomRoll(30, 60)) .. "% increased Energy Shield" end })
@@ -473,15 +560,31 @@ function M.buildAffixes(archetype)
 		{ weight = 9, text = function() return "+" .. randomRoll(25, 55) .. "% to Fire Resistance" end },
 		{ weight = 6, text = function() return (randomRoll(20, 35)) .. "% increased Movement Speed" end },
 	}
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.boots, { weight = 8, text = function() return (randomRoll(15, 35)) .. "% increased Spell Damage" end })
 		t_insert(M.affixes.boots, { weight = 6, text = function() return "+" .. randomRoll(20, 45) .. " to Intelligence" end })
 	else
 		t_insert(M.affixes.boots, { weight = 5, text = function() return "+" .. randomRoll(20, 45) .. " to " .. primaryAttr end })
 	end
+	if isMinion then
+		t_insert(M.affixes.boots, minionDamage)
+		t_insert(M.affixes.boots, minionAttackSpeed)
+	end
+	if isTotem then
+		t_insert(M.affixes.boots, totemDamage)
+		t_insert(M.affixes.boots, totemPlacementSpeed)
+	end
+	if isGrenade then
+		t_insert(M.affixes.boots, grenadeDamage)
+		t_insert(M.affixes.boots, { weight = 10, text = function() return (randomRoll(10, 25)) .. "% increased Cooldown Recovery Rate" end })
+	end
+	if isMelee then
+		t_insert(M.affixes.boots, meleePhysical)
+		t_insert(M.affixes.boots, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
+	end
 	if armourType == "dex" then
 		t_insert(M.affixes.boots, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Evasion Rating" end })
-	elseif armourType == "str" then
+	elseif armourType == "str" or isMelee then
 		t_insert(M.affixes.boots, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Armour" end })
 	elseif armourType == "int" then
 		t_insert(M.affixes.boots, { weight = 8, text = function() return (randomRoll(20, 50)) .. "% increased Energy Shield" end })
@@ -496,6 +599,22 @@ function M.buildAffixes(archetype)
 		{ weight = 7, text = function() return (randomRoll(6, 18)) .. "% increased maximum Life" end },
 		{ weight = 5, text = function() return "+" .. randomRoll(15, 40) .. " to Strength" end },
 	}
+	if isMinion then
+		t_insert(M.affixes.belt, minionDamage)
+		t_insert(M.affixes.belt, minionLife)
+	end
+	if isTotem then
+		t_insert(M.affixes.belt, totemDamage)
+		t_insert(M.affixes.belt, totemLife)
+	end
+	if isGrenade then
+		t_insert(M.affixes.belt, grenadeDamage)
+		t_insert(M.affixes.belt, { weight = 10, text = function() return (randomRoll(10, 25)) .. "% increased Cooldown Recovery Rate" end })
+	end
+	if isMelee then
+		t_insert(M.affixes.belt, meleePhysical)
+		t_insert(M.affixes.belt, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
+	end
 
 	M.affixes.ring = {
 		{ weight = 12, text = function() return "+" .. randomRoll(40, 100) .. " to maximum Life" end },
@@ -504,10 +623,22 @@ function M.buildAffixes(archetype)
 		{ weight = 9, text = function() return "+" .. randomRoll(25, 55) .. "% to Lightning Resistance" end },
 		{ weight = 6, text = function() return "+" .. randomRoll(25, 55) .. " to " .. primaryAttr end },
 	}
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.ring, { weight = 14, text = function() return (randomRoll(30, 70)) .. "% increased Spell Damage" end })
 		t_insert(M.affixes.ring, { weight = 10, text = function() return "+" .. randomRoll(20, 50) .. " to Intelligence" end })
 		t_insert(M.affixes.ring, { weight = 9, text = function() return (randomRoll(10, 25)) .. "% increased Cast Speed" end })
+	elseif isMinion then
+		t_insert(M.affixes.ring, minionDamage)
+		t_insert(M.affixes.ring, minionLife)
+	elseif isTotem then
+		t_insert(M.affixes.ring, totemDamage)
+		t_insert(M.affixes.ring, totemLife)
+	elseif isGrenade then
+		t_insert(M.affixes.ring, grenadeDamage)
+		t_insert(M.affixes.ring, { weight = 10, text = function() return (randomRoll(10, 25)) .. "% increased Cooldown Recovery Rate" end })
+	elseif isMelee then
+		t_insert(M.affixes.ring, meleePhysical)
+		t_insert(M.affixes.ring, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
 	else
 		t_insert(M.affixes.ring, { weight = 10, text = function() return "Adds " .. fmtRoll(3, 12) .. " to " .. fmtRoll(15, 55) .. " " .. (dmgTypes[1] or "Lightning") .. " Damage to Attacks" end })
 		t_insert(M.affixes.ring, { weight = 7, text = function() return (randomRoll(20, 50)) .. "% increased Elemental Damage with Attacks" end })
@@ -522,10 +653,25 @@ function M.buildAffixes(archetype)
 		{ weight = 6, text = function() return "+" .. randomRoll(20, 50) .. "% to Critical Damage Bonus" end },
 		{ weight = 6, text = function() return "+" .. randomRoll(25, 55) .. "% to " .. (dmgTypes[1] or "Lightning") .. " Resistance" end },
 	}
-	if isSpell then
+	if isSpell or isTotem or isGrenade then
 		t_insert(M.affixes.amulet, { weight = 14, text = function() return (randomRoll(30, 70)) .. "% increased " .. (isSpell and "Spell " or "Elemental ") .. "Damage" end })
 		t_insert(M.affixes.amulet, { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Spell Skills" end })
 		t_insert(M.affixes.amulet, { weight = 8, text = function() return (randomRoll(10, 25)) .. "% increased Cast Speed" end })
+	elseif isMinion then
+		t_insert(M.affixes.amulet, minionDamage)
+		t_insert(M.affixes.amulet, minionLife)
+		t_insert(M.affixes.amulet, { weight = 10, text = function() return "+" .. randomRoll(1, 3) .. " to Level of all Minion Skills" end })
+	elseif isTotem then
+		t_insert(M.affixes.amulet, totemDamage)
+		t_insert(M.affixes.amulet, totemLife)
+		t_insert(M.affixes.amulet, totemPlacementSpeed)
+	elseif isGrenade then
+		t_insert(M.affixes.amulet, grenadeDamage)
+		t_insert(M.affixes.amulet, grenadeArea)
+		t_insert(M.affixes.amulet, { weight = 10, text = function() return (randomRoll(10, 25)) .. "% increased Cooldown Recovery Rate" end })
+	elseif isMelee then
+		t_insert(M.affixes.amulet, meleePhysical)
+		t_insert(M.affixes.amulet, { weight = 10, text = function() return (randomRoll(15, 30)) .. "% increased Melee Damage" end })
 	else
 		t_insert(M.affixes.amulet, { weight = 9, text = function() return (randomRoll(25, 60)) .. "% increased " .. (isSpell and "Spell " or "Elemental ") .. "Damage" end })
 	end
@@ -556,41 +702,41 @@ local function baseDefences(slot, tier, armourType)
 		if armourType == "dex" then
 			local minArm = 40 + tier * 40
 			local maxArm = minArm + tier * 30
-			local minEva = 120 + tier * 110
-			local maxEva = minEva + tier * 100
+			local minEva = 300 + tier * 220
+			local maxEva = minEva + tier * 200
 			return "Armour: " .. randomRoll(minArm, maxArm) .. "\nEvasion: " .. randomRoll(minEva, maxEva)
 		elseif armourType == "str" then
-			local minArm = 150 + tier * 120
-			local maxArm = minArm + tier * 100
+			local minArm = 500 + tier * 300
+			local maxArm = minArm + tier * 250
 			return "Armour: " .. randomRoll(minArm, maxArm)
 		elseif armourType == "int" then
-			local minES = 80 + tier * 70
-			local maxES = minES + tier * 60
+			local minES = 200 + tier * 160
+			local maxES = minES + tier * 140
 			return "Energy Shield: " .. randomRoll(minES, maxES)
 		end
 	elseif slot == "helmet" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(100 + tier * 80, 150 + tier * 110)
+			return "Evasion: " .. randomRoll(200 + tier * 120, 300 + tier * 180)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(120 + tier * 90, 180 + tier * 130)
+			return "Armour: " .. randomRoll(300 + tier * 200, 450 + tier * 300)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(60 + tier * 50, 100 + tier * 80)
+			return "Energy Shield: " .. randomRoll(150 + tier * 100, 250 + tier * 160)
 		end
 	elseif slot == "gloves" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(40 + tier * 40, 70 + tier * 60)
+			return "Evasion: " .. randomRoll(80 + tier * 60, 140 + tier * 100)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(50 + tier * 50, 90 + tier * 80)
+			return "Armour: " .. randomRoll(120 + tier * 90, 200 + tier * 150)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(25 + tier * 25, 45 + tier * 45)
+			return "Energy Shield: " .. randomRoll(60 + tier * 50, 110 + tier * 90)
 		end
 	elseif slot == "boots" then
 		if armourType == "dex" then
-			return "Evasion: " .. randomRoll(70 + tier * 60, 120 + tier * 90)
+			return "Evasion: " .. randomRoll(140 + tier * 90, 240 + tier * 150)
 		elseif armourType == "str" then
-			return "Armour: " .. randomRoll(90 + tier * 70, 140 + tier * 100)
+			return "Armour: " .. randomRoll(200 + tier * 130, 320 + tier * 210)
 		elseif armourType == "int" then
-			return "Energy Shield: " .. randomRoll(40 + tier * 35, 70 + tier * 60)
+			return "Energy Shield: " .. randomRoll(90 + tier * 70, 160 + tier * 120)
 		end
 	end
 	return ""
@@ -732,8 +878,13 @@ function M.configure(seedInfo)
 			M.archetype.attack = gem.tags.attack or gem.tags.bow or gem.tags.mace or gem.tags.sword or gem.tags.claw or gem.tags.dagger or gem.tags.wand or gem.tags.staff
 			M.archetype.spell = gem.tags.spell
 			M.archetype.bow = gem.tags.bow
+			M.archetype.crossbow = gem.tags.crossbow
 			M.archetype.wand = gem.tags.wand
 			M.archetype.staff = gem.tags.staff
+			M.archetype.minion = gem.tags.minion
+			M.archetype.totem = gem.tags.totem
+			M.archetype.grenade = gem.tags.grenade
+			M.archetype.melee = gem.tags.melee
 			M.archetype.elemental = {
 				lightning = gem.tags.lightning,
 				cold = gem.tags.cold,
@@ -746,12 +897,13 @@ function M.configure(seedInfo)
 	-- Detect weapon type and armour type from seed gear (overrides gem hints if present)
 	local weaponType = M.detectWeaponType(seedInfo and seedInfo.items)
 	if weaponType then
-		M.archetype.bow = weaponType == "bow"
+		M.archetype.bow = weaponType == "bow" or weaponType == "crossbow"
+		M.archetype.crossbow = weaponType == "crossbow"
 		M.archetype.wand = weaponType == "wand"
 		M.archetype.staff = weaponType == "staff"
 		M.archetype.sceptre = weaponType == "sceptre"
 		M.archetype.melee = weaponType == "one_handed_melee" or weaponType == "two_handed_melee" or weaponType == "claw" or weaponType == "dagger"
-		M.archetype.attack = M.archetype.bow or M.archetype.melee
+		M.archetype.attack = M.archetype.bow or M.archetype.melee or M.archetype.crossbow
 	end
 	M.archetype.armourType = M.detectArmourType(seedInfo and seedInfo.items) or "dex"
 
@@ -767,22 +919,22 @@ function M.configure(seedInfo)
 	end
 
 	local weaponPred
-	if M.archetype.bow then
-		weaponPred = function(b) return b:find("bow", 1, true) end
+	if M.archetype.bow or M.archetype.crossbow then
+		weaponPred = function(b) return b:find("bow", 1, true) or b:find("crossbow", 1, true) end
 	elseif M.archetype.wand then
 		weaponPred = function(b) return b:find("wand", 1, true) end
 	elseif M.archetype.staff then
 		weaponPred = function(b) return b:find("staff", 1, true) or b:find("branch", 1, true) end
 	elseif M.archetype.sceptre then
 		weaponPred = function(b) return b:find("sceptre", 1, true) end
-	elseif M.archetype.melee then
-		weaponPred = function(b)
-			return b:find("sword", 1, true) or b:find("axe", 1, true) or b:find("mace", 1, true)
-				or b:find("mallet", 1, true) or b:find("claw", 1, true) or b:find("dagger", 1, true)
-				or b:find("kris", 1, true) or b:find("skewer", 1, true) or b:find("knife", 1, true)
-				or b:find("maul", 1, true)
+		elseif M.archetype.melee then
+			weaponPred = function(b)
+				return b:find("sword", 1, true) or b:find("axe", 1, true) or b:find("mace", 1, true)
+					or b:find("mallet", 1, true) or b:find("claw", 1, true) or b:find("dagger", 1, true)
+					or b:find("kris", 1, true) or b:find("skewer", 1, true) or b:find("knife", 1, true)
+					or b:find("maul", 1, true) or b:find("club", 1, true) or b:find("greatclub", 1, true)
+			end
 		end
-	end
 	if weaponPred then
 		M.basePools.weapon = filterByType(M.basePools.weapon, weaponPred)
 		M.basePools.weapon = M.filterValidBases("weapon", M.basePools.weapon)
