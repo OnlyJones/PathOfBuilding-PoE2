@@ -1,5 +1,5 @@
 {
-  "date": "2026-06-13 20:03:00",
+  "date": "2026-06-14",
   "source": "pobb.in community share codes (current season PoE2 0.5 Return of the Ancients)",
   "builds": [
     {
@@ -29,24 +29,309 @@
         "Armour": 0,
         "Evasion": 3892
       }
+    },
+    {
+      "index": 2,
+      "code": "https://pobb.in/Pzky1uGNEHqD",
+      "file": "corpus/Pzky1uGNEHqD.xml",
+      "class": "Mercenary",
+      "ascendancy": "Gemling Legionnaire",
+      "secondaryAscendancy": null,
+      "level": 94,
+      "mainSkill": "Wardbound Minions",
+      "metrics": {
+        "TotalDPS": 0,
+        "FullDPS": 0,
+        "AverageDamage": 0,
+        "Speed": 0.099681020733652,
+        "CritChance": 0,
+        "TotalEHP": 11043.676425421,
+        "Life": 2069,
+        "LifeUnreserved": 2069,
+        "ManaUnreserved": 943,
+        "EnergyShield": 2368,
+        "FireResist": 75,
+        "ColdResist": 75,
+        "LightningResist": 75,
+        "ChaosResist": 57,
+        "Armour": 3117,
+        "Evasion": 8
+      }
+    },
+    {
+      "index": 3,
+      "code": "https://pobb.in/S0q7p54SFGHC",
+      "file": "corpus/S0q7p54SFGHC.xml",
+      "class": "Sorceress",
+      "ascendancy": "Stormweaver",
+      "secondaryAscendancy": null,
+      "level": 97,
+      "mainSkill": "Spark",
+      "metrics": {
+        "TotalDPS": 45271.0629,
+        "FullDPS": 0,
+        "AverageDamage": 13315.0185,
+        "Speed": 3.4,
+        "CritChance": 57.312,
+        "TotalEHP": 12707.008089334,
+        "Life": 1748,
+        "LifeUnreserved": 1748,
+        "ManaUnreserved": 3734,
+        "EnergyShield": 0,
+        "FireResist": 75,
+        "ColdResist": 75,
+        "LightningResist": 75,
+        "ChaosResist": 75,
+        "Armour": 0,
+        "Evasion": 244
+      }
+    },
+    {
+      "index": 4,
+      "code": "https://pobb.in/S1GJJkikeswW",
+      "file": "corpus/S1GJJkikeswW.xml",
+      "class": "Witch",
+      "ascendancy": "Infernalist",
+      "secondaryAscendancy": null,
+      "level": 90,
+      "mainSkill": "Spell Totem",
+      "metrics": {
+        "TotalDPS": 0,
+        "FullDPS": 22993.406929911,
+        "AverageDamage": 0,
+        "Speed": 4.5,
+        "CritChance": 0,
+        "TotalEHP": 12262.408229265,
+        "Life": 2235,
+        "LifeUnreserved": 1117,
+        "ManaUnreserved": 1020,
+        "EnergyShield": 6696,
+        "FireResist": 62,
+        "ColdResist": 66,
+        "LightningResist": 58,
+        "ChaosResist": 37,
+        "Armour": 0,
+        "Evasion": 9
+      }
+    },
+    {
+      "index": 5,
+      "code": "https://pobb.in/W4PpVcccMEwG",
+      "file": "corpus/W4PpVcccMEwG.xml",
+      "class": "Mercenary",
+      "ascendancy": "Witchhunter",
+      "secondaryAscendancy": null,
+      "level": 91,
+      "mainSkill": "Explosive Grenade",
+      "metrics": {
+        "TotalDPS": 20400.495862657,
+        "FullDPS": 0,
+        "AverageDamage": 41969.420388941,
+        "Speed": 0.248,
+        "CritChance": 5.2,
+        "TotalEHP": 13535.060942156,
+        "Life": 2043,
+        "LifeUnreserved": 2043,
+        "ManaUnreserved": 735,
+        "EnergyShield": 0,
+        "FireResist": 75,
+        "ColdResist": 75,
+        "LightningResist": 75,
+        "ChaosResist": 22,
+        "Armour": 1437,
+        "Evasion": 5147
+      }
+    },
+    {
+      "index": 6,
+      "code": "https://pobb.in/WbQIFb1l1DP0",
+      "file": "corpus/WbQIFb1l1DP0.xml",
+      "class": "Ranger",
+      "ascendancy": "Deadeye",
+      "secondaryAscendancy": null,
+      "level": 96,
+      "mainSkill": "Ice Shot",
+      "metrics": {
+        "TotalDPS": 30048.308324246,
+        "FullDPS": 0,
+        "AverageDamage": 15717.066171604,
+        "Speed": 1.87434,
+        "CritChance": 6.3,
+        "TotalEHP": 13751.697790908,
+        "Life": 1944,
+        "LifeUnreserved": 1944,
+        "ManaUnreserved": 879,
+        "EnergyShield": 42,
+        "FireResist": 75,
+        "ColdResist": 75,
+        "LightningResist": 75,
+        "ChaosResist": 65,
+        "Armour": 0,
+        "Evasion": 13960
+      }
+    },
+    {
+      "index": 7,
+      "code": "https://pobb.in/zDcjQC5whnUs",
+      "file": "corpus/zDcjQC5whnUs.xml",
+      "class": "Warrior",
+      "ascendancy": "Titan",
+      "secondaryAscendancy": null,
+      "level": 96,
+      "mainSkill": "Mace Strike",
+      "metrics": {
+        "TotalDPS": 27372.327764325,
+        "FullDPS": 0,
+        "AverageDamage": 14400.424960188,
+        "Speed": 1.9008,
+        "CritChance": 4.65,
+        "TotalEHP": 54728.37189556,
+        "Life": 3258,
+        "LifeUnreserved": 3258,
+        "ManaUnreserved": 464,
+        "EnergyShield": 93,
+        "FireResist": 77,
+        "ColdResist": 76,
+        "LightningResist": 76,
+        "ChaosResist": 75,
+        "Armour": 46884,
+        "Evasion": 296
+      }
     }
   ],
-  "patterns": {
-    "classes": { "Ranger": 1 },
-    "ascendancies": { "Deadeye": 1 },
-    "skills": { "Lightning Arrow": 1, "Bow Shot": 1, "Rhoa Mount": 1, "Voltaic Mark": 1, "Tornado Shot": 1, "Barrage": 1, "Freezing Salvo": 1, "Lightning Rod": 1, "Trinity": 1 },
-    "supportGems": { "Innervate": 1, "Charged Shots II": 1, "Rapid Attacks II": 1, "Chain III": 1, "Stoicism II": 1, "Elemental Armament II": 1, "Longshot II": 1, "Brutus' Brain": 1, "Elemental Army": 1, "Uruk's Smelting": 1, "Mark for Death": 1, "Armour Break III": 1, "Prolonged Duration II": 1, "Prolonged Duration I": 1, "Overabundance II": 1, "Concentrated Area": 1, "Rapid Casting II": 1, "Cooldown Recovery II": 1, "Second Wind III": 1, "Armour Demolisher II": 1, "Cold Attunement": 1, "Magnified Area I": 1, "Elemental Focus": 1, "Deliberation": 1, "Cold Mastery": 1 },
-    "uniqueItems": { "Heart of the Well": 1, "Ingenuity": 1, "Painter's Servant": 1 },
-    "rareBases": { "Gold Ring": 1, "Gemini Bow": 1, "Bloodstone Amulet": 1, "Avian Mask": 1, "Primed Quiver": 1, "Slipstrike Vest": 1, "Charmed Shoes": 1, "Iron Ring": 1, "Emerald": 2, "Diamond": 1, "Dousing Charm": 1, "Staunching Charm": 1, "Thawing Charm": 1, "Transcendent Life Flask": 1, "Ultimate Mana Flask": 1, "Utility Belt": 1, "Torn Gloves": 1 },
-    "notableNodes": { "Clean Shot": 1, "Crystal Elixir": 1, "Forces of Nature": 1, "Pierce the Heart": 1, "Harness the Elements": 1, "Honed Instincts": 1, "Emboldened Avatar": 1, "Master Fletching": 1, "Flash Storm": 1, "Gathering Winds": 1, "Endless Munitions": 1, "Escape Velocity": 1, "Falcon Technique": 1, "Primal Sundering": 1, "Acceleration": 1, "Wrapped Quiver": 1, "Inspiring Ally": 1, "Catalysis": 1, "Maiming Strike": 1, "Projectile Proximity Specialisation": 1, "Proficiency": 1, "Lightning Rod": 1, "The Spring Hare": 1 },
-    "masteryNodes": {},
-    "configFlags": { "ConcPathBypassCD": 1, "FlickerStrikeBypassCD": 1, "VigilantStrikeBypassCD": 1, "companionInPresence": 1, "raiseSpectreEnableBuffs": 1, "raiseSpectreEnableCurses": 1, "summonCompanionEnableBuffs": 1, "summonCompanionEnableCurses": 1, "summonElementalRelicEnableAngerAura": 1, "summonElementalRelicEnableHatredAura": 1, "summonElementalRelicEnableWrathAura": 1, "targetBrandedEnemy": 1 }
+  "optimizerResults": {
+    "ogzys1BZXedq_0_5.xml": {
+      "focus": "balance",
+      "TotalDPS": 85215.82,
+      "Life": 2432,
+      "TotalEHP": 6119.08,
+      "deltaDPS": 86.8,
+      "deltaLife": 38.3,
+      "deltaEHP": 17.5
+    },
+    "Pzky1uGNEHqD.xml": {
+      "focus": "balance",
+      "TotalDPS": 0,
+      "Life": 2243,
+      "TotalEHP": 5581.79,
+      "deltaDPS": 0,
+      "deltaLife": 8.4,
+      "deltaEHP": -49.5
+    },
+    "S0q7p54SFGHC.xml": {
+      "focus": "balance",
+      "TotalDPS": 31781.83,
+      "Life": 2630,
+      "TotalEHP": 9272.6,
+      "deltaDPS": -29.8,
+      "deltaLife": 50.5,
+      "deltaEHP": -27.0
+    },
+    "S1GJJkikeswW.xml": {
+      "focus": "balance",
+      "TotalDPS": 0,
+      "Life": 2703,
+      "TotalEHP": 7599.82,
+      "deltaDPS": 0,
+      "deltaEHP": -38.0,
+      "deltaLife": 20.9
+    },
+    "W4PpVcccMEwG.xml": {
+      "focus": "dps",
+      "TotalDPS": 0,
+      "Life": 2507,
+      "TotalEHP": 12853.89,
+      "deltaDPS": -100.0,
+      "deltaLife": 22.7,
+      "deltaEHP": -5.0
+    },
+    "WbQIFb1l1DP0.xml": {
+      "focus": "balance",
+      "TotalDPS": 77822.44,
+      "Life": 3143,
+      "TotalEHP": 9424.68,
+      "deltaDPS": 159.0,
+      "deltaLife": 61.7,
+      "deltaEHP": -31.5
+    },
+    "zDcjQC5whnUs.xml": {
+      "focus": "balance",
+      "TotalDPS": 5764.68,
+      "Life": 3401,
+      "TotalEHP": 11029.8,
+      "deltaDPS": -78.9,
+      "deltaLife": 4.4,
+      "deltaEHP": -79.8
+    }
   },
-  "metrics": {
-    "TotalDPS": { "mean": 45626.576339036, "std": 0, "min": 45626.576339036, "max": 45626.576339036 },
-    "TotalEHP": { "mean": 5206.8332770372, "std": 0, "min": 5206.8332770372, "max": 5206.8332770372 },
-    "Life": { "mean": 1759, "std": 0, "min": 1759, "max": 1759 },
-    "Speed": { "mean": 2.71728, "std": 0, "min": 2.71728, "max": 2.71728 },
-    "CritChance": { "mean": 5, "std": 0, "min": 5, "max": 5 }
+  "patterns": {
+    "classes": {
+      "Ranger": 2,
+      "Mercenary": 2,
+      "Sorceress": 1,
+      "Witch": 1,
+      "Warrior": 1
+    },
+    "ascendancies": {
+      "Deadeye": 2,
+      "Gemling Legionnaire": 1,
+      "Stormweaver": 1,
+      "Infernalist": 1,
+      "Witchhunter": 1,
+      "Titan": 1
+    },
+    "skills": {
+      "Lightning Arrow": 1,
+      "Wardbound Minions": 1,
+      "Spark": 1,
+      "Spell Totem": 1,
+      "Explosive Grenade": 1,
+      "Ice Shot": 1,
+      "Mace Strike": 1
+    },
+    "uniqueItems": {
+      "Heart of the Well": 1,
+      "Ingenuity": 1,
+      "Painter's Servant": 1,
+      "The Raven's Flock": 1,
+      "Veilpiercer": 1,
+      "Split Personality": 1,
+      "The Fall of the Axe": 1,
+      "For Utopia": 1,
+      "From Nothing": 1,
+      "Lavianga's Spirits": 1,
+      "Grand Spectrum": 1,
+      "The Whispering Ice": 1,
+      "The Covenant": 1,
+      "Maligaro's Virtuosity": 1,
+      "Kalandra's Touch": 1,
+      "Arakaali's Gift": 1,
+      "Sanguis Heroum": 1,
+      "Nascent Hope": 1,
+      "Coward's Legacy": 1,
+      "Alpha's Howl": 1,
+      "Hyrri's Ire": 1,
+      "Rite of Passage": 1
+    },
+    "metrics": {
+      "TotalDPS": {
+        "mean": 24102.467184323,
+        "std": 18904.638780606,
+        "min": 0,
+        "max": 45626.576339036
+      },
+      "TotalEHP": {
+        "mean": 15863.713800084,
+        "std": 15729.161406184,
+        "min": 5206.8332770372,
+        "max": 54728.37189556
+      },
+      "Life": {
+        "mean": 2151.0,
+        "std": 502.95228500834,
+        "min": 1748,
+        "max": 3258
+      }
+    }
   }
 }

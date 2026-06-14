@@ -7,77 +7,83 @@ Determine whether an AI agent can create Path of Exile 2 builds that beat curren
 
 ## What was done
 
-### 1. Environment & tooling fixes
-- Fixed `tools/lib/pob_env.lua` headless bootstrap:
-  - Exposed `POB_PROJECT_ROOT` global.
-  - Overrode `LoadModule` / `PLoadModule` so POB can load `src/Data/` modules after cwd is restored to the project root.
-  - Fixed wrapper to preserve multiple return values from `Modules/BuildDisplayStats`.
-- Fixed `tools/lib/share_code.lua` URL regexes and added **share-code encoding** (`tools/export_share_code.lua`).
+### Phase 2 — Auras/heralds, flask/charm generation, and tree rerouting
 
-### 2. Real community corpus ingestion
-- Found and decoded a current-season PoE2 0.5 Lightning Arrow Deadeye share code:
-  - `https://pobb.in/ogzys1BZXedq`
-  - Level 91 Ranger / Deadeye
-- Saved to `corpus/ogzys1BZXedq_0_5.xml` and created `corpus_summary.json`.
+#### 1. Aura / herald / mark / banner optimization (`tools/lib/buff_pool.lua`, `tools/improve_build.lua`)
+- Added an archetype-aware buff pool that filters `src/Data/Gems.lua` for heralds, banners, purities, Discipline, and marks.
+- Implemented `optimizeBuffs()`: greedy selection that preserves an existing aura/mark group identity, evaluates each addition against the real POB calc, and keeps the highest-scoring set.
+- Heralds are filtered to match the active skill's element (e.g., Herald of Thunder for Lightning Arrow).
+- Buffs are added to a separate skill group so they persist through save/load.
 
-### 3. Cross-archetype adaptive item pool
-- Replaced the Lightning-Arrow-only pool with `tools/lib/adaptive_item_pool.lua`:
-  - Detects weapon type (bow, wand, staff, claw, dagger, melee) and armour type (dex/str/int) from **seed gear**.
-  - Filters generated bases to match the seed's weapon and armour preferences.
-  - Adds `% increased Evasion Rating`, `% increased Armour`, and `% increased Energy Shield` affixes based on armour type.
-  - Registers **seed unique items** so the optimizer can keep and reuse them.
-  - Generates shareable pobb.in URLs via `tools/export_share_code.lua`.
+#### 2. Flask and charm generation (`tools/lib/adaptive_item_pool.lua`)
+- `generateSet()` now creates two flasks and three charms per gear set.
+- Flask generator produces life or mana flasks with a useful prefix + suffix (recovery, charge gain, or ailment immunity).
+- Charm generator produces ailment charms with charge/duration/recovery suffixes.
+- Generated flasks/charms are equipped into `Flask 1/2` and `Charm 1/2/3` slots during improvement.
 
-### 4. Generic build-improver tool
-- `tools/improve_build.lua` now:
-  - Accepts any PoB2 XML, share code, or URL.
-  - Detects archetype from main skill + equipped gear.
-  - Keeps seed uniques by default (`--keep-uniques`) while upgrading rare slots.
-  - Supports `--focus dps|balance|defence` objective profiles.
-  - Supports `--slots` targeting and `--replace-uniques`.
-  - Example on the Lightning Arrow seed with `--keep-uniques --focus balance`:
-    - **TotalDPS: 45,626 → 89,482 (+96.1%)**
-    - **Life: 1,759 → 2,237 (+27.2%)**
-    - **TotalEHP: 5,207 → 5,676 (+9.0%)**
-    - All elemental resistances capped.
+#### 3. Larger passive-tree moves (`tools/improve_build.lua`)
+- Candidate notable search radius expanded from 1 hop to **2 hops** around allocated nodes.
+- Added `pruneTree()` to remove allocated notables that no longer improve the objective, freeing points for better nodes or travel.
 
-### 5. GUI validation
-- Loaded `improved_balance.xml` in the real Path of Building: PoE2 GUI.
-- Headless and GUI Calcs-tab values match within rounding:
-  - TotalDPS: 89,481.5
-  - Life: 2,237
-  - EHP: 5,676
-  - Evasion: 2,279
-  - Resists: 75 / 75 / 75
+#### 4. Phase 2 results on the Lightning Arrow Deadeye seed
+Command:
+```
+luajit tools/improve_build.lua corpus/ogzys1BZXedq_0_5.xml --output improved_phase2_balance.xml --points 60 --gear-sets 16 --seed 42 --keep-uniques --focus balance --optimize-gems
+```
+
+| Metric | Seed | Phase 2 | Delta |
+|--------|------|---------|-------|
+| TotalDPS | 45,626.58 | 85,215.82 | **+86.8%** |
+| AverageDamage | 16,462.03 | 28,297.67 | **+72.0%** |
+| Life | 1,759 | 2,432 | **+38.3%** |
+| TotalEHP | 5,206.83 | 6,119.08 | **+17.5%** |
+| EnergyShield | 176 | 392 | **+122.7%** |
+| Resists | 75/73/75 | 75/75/75 | Capped |
+
+Generated files:
+- `improved_phase2_balance.xml` — balance-focused build.
+- `improved_phase2_dps.xml` — DPS-focused build (81,850 DPS).
+
+Note: Phase 1's DPS-focused result was higher because Phase 1's item generator could roll very aggressive offence affixes and did not yet generate flasks/charms. Phase 2 trades some peak DPS for significantly higher life and EHP while still beating the seed by a large margin.
+
+### Phase 1 — Skill gems & smarter tree — DONE
+- **Support-gem optimization** (`tools/lib/gem_pool.lua`, `tools/improve_build.lua`):
+  - Archetype-aware support pool filtered by active-skill tags.
+  - Greedy support selection evaluated against real POB calc.
+  - Fixed save/load identity bug for modified skill groups.
+- **Smarter passive-tree search** (`tools/improve_build.lua`):
+  - Candidate notables within **2 hops** of allocated nodes.
+  - Added `pruneTree()` to remove low-value notables.
+- Phase 1 result: **TotalDPS +118.8%**, Life +27.2%, EHP +9.0%.
+
+### Earlier milestones (retained)
+- Headless POB bootstrap, share-code encode/decode, adaptive cross-archetype item pool, generic build improver, smoke tests, and initial GUI validation.
 
 ## Key findings
-1. The headless POB pipeline is validated against the live GUI: generated builds load and produce identical stats.
-2. Keeping the seed's unique items while re-rolling rares produces a **large DPS uplift** (+96%) without sacrificing defences.
-3. Adaptive base/affix selection works: the optimizer now stays within the seed's archetype (weapon type, armour type, elemental damage type).
-4. Resistances are now reliably capped via guaranteed double-resist rolls on armour and jewellery.
+1. **Support gems are the single biggest headless DPS lever**: most of Phase 1's DPS gain came from support selection.
+2. **Auras/heralds/marks also matter**, but their value is more conditional and defensively weighted in the balance objective.
+3. **Flasks and charms improve EHP and life recovery** while staying within the seed's item slots.
+4. **Save/load identity matters** for both main-skill supports and aura/mark groups; in-place edits are required for persistence.
+5. Phase 2's balance build has **lower peak DPS than Phase 1** but higher life/EHP, showing the objective profiles are working.
 
-## Next steps
-1. **Expand unique database**: add more commonly-used build-defining uniques to the pool.
-2. **Skill gem optimization**: suggest/upgrade support gems based on main skill tags.
-3. **Aura/flask/charm optimization**: generate sensible flask/charm sets and auras.
-4. **Tree rerouting**: allow larger tree moves, not just proximity-based additions.
-5. **Corpus expansion**: ingest additional current-season share codes across multiple archetypes.
-6. **Trade/budget constraints**: model realistic cost limits for rares and uniques.
+## Next steps (Phase 3)
+1. **Corpus expansion**: ingest additional current-season share codes across multiple archetypes.
+2. **Trade/budget constraints**: model realistic cost limits for rares and uniques.
+3. **GUI integration**: build a lightweight in-POB panel once the optimizer is validated across archetypes.
 
 ## Files changed
 - `tools/lib/pob_env.lua`
 - `tools/lib/build_api.lua`
 - `tools/lib/share_code.lua`
 - `tools/lib/objective.lua`
-- `tools/lib/adaptive_item_pool.lua` (new, replaces item_pool.lua)
-- `tools/lib/base64.lua`
+- `tools/lib/adaptive_item_pool.lua`
+- `tools/lib/gem_pool.lua`
+- `tools/lib/buff_pool.lua` (new)
 - `tools/optimize_archetype.lua`
 - `tools/improve_build.lua`
-- `tools/export_share_code.lua` (new)
-- `tools/compare_builds.lua` (new)
+- `tools/export_share_code.lua`
+- `tools/compare_builds.lua`
 - `tools/validate_gui.lua`
 - `tools/smoke_test.lua`
 - `corpus_summary.json`
 - `corpus/ogzys1BZXedq_0_5.xml`
-- `community_builds/ogzys1BZXedq.xml` and `ogzys1BZXedq_0_5.xml`
-- `.gitignore`
